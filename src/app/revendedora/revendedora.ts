@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
 
@@ -19,32 +19,6 @@ interface ModeloCadastrado {
 interface Acesso {
   data: string;
   hora: string;
-}
-
-interface Acessorio {
-  id_acessorio: number;
-  nome: string;
-}
-
-interface Carro {
-  id_carro: number;
-  placa: string;
-  chassi: string;
-  cor: string;
-  ano: number;
-  valor: string;
-  quilometragem: number;
-  situacao: string;
-  modelo: string;
-  marca: string;
-}
-
-// Um acessório que está em um carro
-interface CarroAcessorio {
-  id_carro: number;
-  placa: string;
-  id_acessorio: number;
-  acessorio: string;
 }
 
 interface Resposta {
@@ -79,26 +53,11 @@ export class Revendedora implements OnInit {
   novaSenha = '';
   confirmacao = '';
 
-  // Formulários dos acessórios e dos carros
-  novoAcessorio = '';
-  novoCarro = { placa: '', chassi: '', cor: '', ano: '', valor: '', quilometragem: '', situacao: '', id_modelo: '' };
-  vinculo = { id_carro: '', id_acessorio: '' };
-
-  // Formulário Trabalhe conosco
-  candidato = { nome: '', email: '', celular: '', cidade: '', estado: '', cargo: '', linkedin: '' };
-
-  // Opções dos selects
-  estados = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
-  cargos = ['Vendedor de resenha', 'Gerente da resenha', 'Atendente de resenha', 'Mecânico da resenha', 'Lavador de resenha', 'Administrativo da resenha', 'Outra resenha'];
-
   // Dados que aparecem la na tela
   usuario = '';
   marcas: Marca[] = [];
   lista: ModeloCadastrado[] = [];
   historico: Acesso[] = [];
-  acessorios: Acessorio[] = [];
-  carros: Carro[] = [];
-  vinculos: CarroAcessorio[] = [];
 
   // Mensagens
   msg = '';
@@ -155,7 +114,7 @@ export class Revendedora implements OnInit {
     console.error('Erro:', erro);
 
     if (erro.status === 401) {
-      // acaba  sessão
+      // acaba a sessão, volta pro login
       this.irPara('login');
     } else {
       this.erro = 'Não foi possível conectar ao servidor.';
@@ -182,22 +141,16 @@ export class Revendedora implements OnInit {
     this.loginConfirma = '';
     this.senhaConfirma = '';
     this.erroExcluir = '';
-    this.novoAcessorio = '';
-    this.limparCarro();
-    this.limparVinculo();
     this.aba = 'modelos';
     this.msg = '';
     this.erro = '';
     this.cadastrado = false;
-    this.limparCandidato();
 
     let nomeDaPagina = 'Revendedora de Carros';
     if (tela === 'login') {
       nomeDaPagina = 'Entrar';
     } else if (tela === 'cadastro') {
       nomeDaPagina = 'Cadastro de usuário';
-    } else if (tela === 'trabalhe') {
-      nomeDaPagina = 'Trabalhe conosco';
     } else if (tela === 'principal') {
       nomeDaPagina = 'Cadastro';
     }
@@ -206,7 +159,7 @@ export class Revendedora implements OnInit {
     this.atualizar();
   }
 
-  // Troca de aba na tela principal
+  // Troca entre a aba de modelos e a de marcas
   trocarAba(aba: string, evento: Event): void {
     evento.preventDefault();
 
@@ -221,22 +174,11 @@ export class Revendedora implements OnInit {
     this.loginConfirma = '';
     this.senhaConfirma = '';
     this.erroExcluir = '';
-    this.novoAcessorio = '';
-    this.limparCarro();
-    this.limparVinculo();
     this.msg = '';
     this.erro = '';
 
     if (aba === 'marcas') {
       this.tituloPagina.setTitle('Cadastro de marca');
-    } else if (aba === 'acessorios') {
-      this.tituloPagina.setTitle('Cadastro de acessório');
-      this.carregarAcessorios();
-    } else if (aba === 'carros') {
-      this.tituloPagina.setTitle('Cadastro de carro');
-    } else if (aba === 'vinculos') {
-      this.tituloPagina.setTitle('Carros e acessórios');
-      this.carregarAcessorios();
     } else if (aba === 'conta') {
       this.tituloPagina.setTitle('Alterar senha');
       this.carregarHistorico();
@@ -291,33 +233,6 @@ export class Revendedora implements OnInit {
     });
   }
 
-  // Zera os campos do tarablha com nós
-  limparCandidato(): void {
-    this.candidato = { nome: '', email: '', celular: '', cidade: '', estado: '', cargo: '', linkedin: '' };
-  }
-
-  // Manda a inscrição pro PHP
-  enviarCandidatura(form: NgForm): void {
-    this.msg = '';
-    this.erro = '';
-
-    this.post('candidato', this.candidato).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Candidatura enviada!';
-
-          // limpa o formulário e os avisos de campo obrigatório
-          form.resetForm();
-          this.limparCandidato();
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
   //Sair conta
   sair(evento: Event): void {
     evento.preventDefault();
@@ -338,9 +253,6 @@ export class Revendedora implements OnInit {
 
     this.carregarMarcas();
     this.carregarModelos();
-    this.carregarAcessorios();
-    this.carregarCarros();
-    this.carregarVinculos();
   }
 
   // Preenche a parte do select das marcas
@@ -380,7 +292,7 @@ export class Revendedora implements OnInit {
 
   // Apaga a marca e pergunta
   excluirMarca(marca: Marca): void {
-    const certeza = confirm('Certeza que vai apagar a marca ' + marca.nome + '??? Todos os modelos dessa marca e os carros deles vão sumir também.');
+    const certeza = confirm('Certeza que vai apagar a marca ' + marca.nome + '??? Todos os modelos dessa marca vai sumir também.');
     if (!certeza) {
       return;
     }
@@ -423,11 +335,9 @@ export class Revendedora implements OnInit {
           this.msg = resposta.mensagem ?? 'Marca apagada!';
           this.cancelarExclusao();
 
-          // recarrega tudo, porque os modelos e os carros da marca sumiram também
+          // recarrega as duas, porque os modelos da marca sumiram também
           this.carregarMarcas();
           this.carregarModelos();
-          this.carregarCarros();
-          this.carregarVinculos();
         } else {
           this.erroExcluir = resposta.mensagem ?? '';
           this.senhaConfirma = '';
@@ -440,7 +350,7 @@ export class Revendedora implements OnInit {
 
   // Apaga um modelo do usuário
   excluirModelo(modelo: ModeloCadastrado): void {
-    const certeza = confirm('Apagar o modelo ' + modelo.modelo + '? Os carros desse modelo também vão sumir.');
+    const certeza = confirm('Apagar o modelo ' + modelo.modelo + '?');
     if (!certeza) {
       return;
     }
@@ -456,17 +366,14 @@ export class Revendedora implements OnInit {
           this.erro = resposta.mensagem ?? '';
         }
 
-        // os carros desse modelo também sumiram
         this.carregarModelos();
-        this.carregarCarros();
-        this.carregarVinculos();
         this.atualizar();
       },
       error: (erro) => this.falhaServidor(erro)
     });
   }
 
-  // Troca a senha da pessoa
+  // Troca a senha do usuário que está logado
   alterarSenha(): void {
     this.msg = '';
     this.erro = '';
@@ -494,7 +401,7 @@ export class Revendedora implements OnInit {
     });
   }
 
-  // Pega o histórico de logins
+  // Pega o histórico de logins pra tabela
   carregarHistorico(): void {
     this.get('historico').subscribe({
       next: (resposta) => {
@@ -507,7 +414,7 @@ export class Revendedora implements OnInit {
     });
   }
 
-  //Carros que a pessoa colocou
+  // Tabela dos carros do usuário que ele colocou
   carregarModelos(): void {
     this.get('modelos').subscribe({
       next: (resposta) => {
@@ -520,7 +427,7 @@ export class Revendedora implements OnInit {
     });
   }
 
-  // Salva o modelo e marca
+  // Salva o modelo e marca escolhida
   cadastrarModelo(): void {
     this.msg = '';
     this.erro = '';
@@ -539,199 +446,6 @@ export class Revendedora implements OnInit {
         this.idMarca = '';
 
         this.carregarModelos();
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Acessórios que vêm do PHP (já em ordem alfabética)
-  carregarAcessorios(): void {
-    this.get('acessorios').subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.acessorios = resposta.dados;
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Salva um acessório novo
-  cadastrarAcessorio(): void {
-    this.msg = '';
-    this.erro = '';
-
-    const dados = { nome: this.novoAcessorio };
-
-    this.post('acessorio', dados).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Acessório cadastrado!';
-          this.novoAcessorio = '';
-          this.carregarAcessorios();
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Apaga o acessório (ele sai de todos os carros)
-  excluirAcessorio(acessorio: Acessorio): void {
-    const certeza = confirm('Apagar o acessório ' + acessorio.nome + '? Ele também vai sair de todos os carros.');
-    if (!certeza) {
-      return;
-    }
-
-    this.msg = '';
-    this.erro = '';
-
-    this.post('excluir_acessorio', { id_acessorio: acessorio.id_acessorio }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Acessório apagado!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        this.carregarAcessorios();
-        this.carregarVinculos();
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Tabela dos carros da pessoa
-  carregarCarros(): void {
-    this.get('carros').subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.carros = resposta.dados;
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Zera os campos do carro
-  limparCarro(): void {
-    this.novoCarro = { placa: '', chassi: '', cor: '', ano: '', valor: '', quilometragem: '', situacao: '', id_modelo: '' };
-  }
-
-  // Salva o carro (o PHP confere tudo de novo)
-  cadastrarCarro(form: NgForm): void {
-    this.msg = '';
-    this.erro = '';
-
-    this.post('carro', this.novoCarro).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Carro cadastrado!';
-
-          // limpa o formulário e os avisos de campo obrigatório
-          form.resetForm();
-          this.limparCarro();
-          this.carregarCarros();
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Apaga o carro (os acessórios dele também saem)
-  excluirCarro(carro: Carro): void {
-    const certeza = confirm('Apagar o carro de placa ' + carro.placa + '?');
-    if (!certeza) {
-      return;
-    }
-
-    this.msg = '';
-    this.erro = '';
-
-    this.post('excluir_carro', { id_carro: carro.id_carro }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Carro apagado!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        this.carregarCarros();
-        this.carregarVinculos();
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Tabela com os acessórios de cada carro
-  carregarVinculos(): void {
-    this.get('carros_acessorios').subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.vinculos = resposta.dados;
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Zera os selects de carro e acessório
-  limparVinculo(): void {
-    this.vinculo = { id_carro: '', id_acessorio: '' };
-  }
-
-  // Coloca o acessório no carro
-  vincular(): void {
-    this.msg = '';
-    this.erro = '';
-
-    const dados = { id_carro: this.vinculo.id_carro, id_acessorio: this.vinculo.id_acessorio };
-
-    this.post('vincular', dados).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Acessório colocado no carro!';
-          this.limparVinculo();
-          this.carregarVinculos();
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
-
-  // Tira o acessório do carro
-  excluirVinculo(v: CarroAcessorio): void {
-    const certeza = confirm('Tirar ' + v.acessorio + ' do carro ' + v.placa + '?');
-    if (!certeza) {
-      return;
-    }
-
-    this.msg = '';
-    this.erro = '';
-
-    this.post('excluir_vinculo', { id_carro: v.id_carro, id_acessorio: v.id_acessorio }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Acessório tirado do carro!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        this.carregarVinculos();
         this.atualizar();
       },
       error: (erro) => this.falhaServidor(erro)

@@ -1,17 +1,17 @@
-//Parte de importar as ferramentas do Angular
+// Parte de importar as ferramentas do Angular
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-//Componente chama a API PHP
+// Esses dois são pro HttpClient: o componente chama a API PHP
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-//Testar o componente
+// O componente que vai ser testado
 import { Revendedora } from './revendedora';
 
-//Testes do componente Revendedora
+// Aqui começa o grupo de testes do componente Revendedora
 describe('Revendedora', () => {
 
-  //Fixture é tipo um "envelope" dele no teste
+  // component é o próprio componente né, fixture é tipo um "envelope" dele no teste
   let component: Revendedora;
   let fixture: ComponentFixture<Revendedora>;
 
