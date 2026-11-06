@@ -43,10 +43,9 @@ ng serve -o
 
 11° Abra a pasta api-revendedora no VsCode, analise o arquivo conexao.php. 
 Linha 3: Veja se a porta está de acordo com a porta da máquina em que vc está.
-Linha 6: Veja a senha se está de acordo com a mesma senha do MySql da máquina que cê tá.
+Linha 7: Veja a senha se está de acordo com a mesma senha do MySql da máquina que cê tá.
 
-12°Execute o arquivo banco.sql, no MySql Workbench
-(ele apaga e cria o banco de novo, então todos os dados somem. Rode de novo sempre que o banco mudar)
+12°Execute o arquivo banco.sql, no MySql Worckbench
 
 13° Copie e cole o src lá na pasta Teste que está em Documentos
 
@@ -64,14 +63,8 @@ JOIN bd_revendedoracarros.tb_marca ma ON ma.id_marca = mo.id_marca
 JOIN bd_revendedoracarros.tb_usuario u ON u.login = mo.login
 ORDER BY u.login, mo.id_modelo;
 
-Para ver os acessórios de cada carro (INNER JOIN):
-SELECT c.id_carro, c.placa, a.id_acessorio, a.nome
-FROM bd_revendedoracarros.tb_carro_acessorio ca
-INNER JOIN bd_revendedoracarros.tb_carro c ON ca.id_carro = c.id_carro
-INNER JOIN bd_revendedoracarros.tb_acessorio a ON ca.id_acessorio = a.id_acessorio;
+Para adicionar uma nova marca no Banco de Dados, no final do código banco.slq, adicione:
+('Nomde_da_Marca');
+E não esqueça de colocar o ponto e virgula no final e a virgula na marca de cima.
 
-Para ver os carros:
-SELECT * FROM bd_revendedoracarros.tb_carro;
 
-Se o banco já existe e vc não quer perder os dados, em vez do banco.sql rode só o novas_tabelas.sql
-(ele cria tb_acessorio, tb_carro e tb_carro_acessorio).
