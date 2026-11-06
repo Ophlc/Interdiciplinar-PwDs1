@@ -2,8 +2,8 @@
 
 @if (tela === 'login') {
 
-  <div class="logo-grande"></div>
   <div class="caixa">
+
     <h1>Entrar</h1>
 
     @if (erro !== '') {
@@ -16,7 +16,8 @@
 
     <form #loginForm="ngForm" (ngSubmit)="entrar()" novalidate>
 
-      <label> Login
+      <label>
+        Login
         <input
           type="text"
           name="login"
@@ -26,7 +27,8 @@
         >
       </label>
 
-      <label> Senha
+      <label>
+        Senha
         <input
           type="password"
           name="senha"
@@ -39,6 +41,7 @@
       <button type="submit" [disabled]="loginForm.invalid">
         Entrar
       </button>
+
     </form>
 
     <p>
@@ -46,18 +49,16 @@
       <a href="#" (click)="irPara('cadastro', $event)">Cadastre-se</a>
     </p>
 
-    <p>
-      Quer trabalhar com nós?
-      <a href="#" (click)="irPara('trabalhe', $event)">Trabalhe conosco</a>
-    </p>
   </div>
+
 }
 
 <!-- 2° Tela que é a de Cadastro -->
+
 @if (tela === 'cadastro') {
 
-  <div class="logo-grande"></div>
   <div class="caixa">
+
     <h1>Cadastro de usuário</h1>
 
     @if (erro !== '') {
@@ -66,7 +67,8 @@
 
     <form #cadastroForm="ngForm" (ngSubmit)="cadastrarUsuario()" novalidate>
 
-      <label> Login
+      <label>
+        Login
         <input
           type="text"
           name="login"
@@ -76,7 +78,8 @@
         >
       </label>
 
-      <label> Senha (até 10 caracteres)
+      <label>
+        Senha (até 10 caracteres)
         <input
           type="password"
           name="senha"
@@ -89,21 +92,32 @@
       <button type="submit" [disabled]="cadastroForm.invalid">
         Cadastrar
       </button>
+
       <a href="#" (click)="irPara('login', $event)">Voltar</a>
+
     </form>
+
   </div>
+
 }
 
-<!--Parte do trabalhe conosco-->
-@if (tela === 'trabalhe') {
+<!-- 3° Tela a Principal -->
 
-  <div class="logo-grande"></div>
+@if (tela === 'principal') {
+
+  <div class="topo">
+    <span>Revendedora de Carros</span>
+
+    <span>
+      Usuário: <b>{{ usuario }}</b> |
+      <a href="#" (click)="sair($event)">Sair</a>
+    </span>
+  </div>
+
+  <!-- Formulário de modelo e marca -->
   <div class="caixa">
-    <h1>Trabalhe conosco</h1>
 
-    <p class="texto-intro">
-      Quer fazer parte da melhor equipe da Etec, só fazer esse formulário ai.
-    </p>
+    <h1>Cadastro</h1>
 
     @if (msg !== '') {
       <div class="aviso ok">{{ msg }}</div>
@@ -113,872 +127,74 @@
       <div class="aviso erro">{{ erro }}</div>
     }
 
-    <form #candidatoForm="ngForm" (ngSubmit)="enviarCandidatura(candidatoForm)" novalidate>
+    <form #modeloForm="ngForm" (ngSubmit)="cadastrarModelo()" novalidate>
 
-      <label> Nome completo
+      <label>
+        Modelo
         <input
           type="text"
-          name="nome"
-          [(ngModel)]="candidato.nome"
-          #cNome="ngModel"
-          placeholder="Seu nome completo"
+          name="modelo"
+          [(ngModel)]="modelo"
           maxlength="50"
-          minlength="3"
-          pattern="[A-Za-zÀ-ÿ' -]+"
           required
         >
-        @if (cNome.invalid && cNome.touched) {
-          <small class="campo-erro">Seu nome não tem número né oohh, escreve certo ai.</small>
-        }
       </label>
 
-      <label> E-mail
-        <input
-          type="email"
-          name="email"
-          [(ngModel)]="candidato.email"
-          #cEmail="ngModel"
-          placeholder="nome@email.com"
-          maxlength="50"
-          email
-          required
-        >
-        @if (cEmail.invalid && cEmail.touched) {
-          <small class="campo-erro">Digite um e-mail válido.</small>
-        } @else {
-          <small class="campo-ajuda"></small>
-        }
-      </label>
-
-      <label> Celular
-        <input
-          type="text"
-          name="celular"
-          [(ngModel)]="candidato.celular"
-          #cCelular="ngModel"
-          placeholder="13999999999"
-          inputmode="numeric"
-          maxlength="11"
-          pattern="[1-9][0-9]9[0-9]{8}"
-          required
-        >
-        @if (cCelular.invalid && cCelular.touched) {
-          <small class="campo-erro">Digite o DDD e o número, só os 11 números.</small>
-        } @else {
-          <small class="campo-ajuda">Não esquece o DDD</small>
-        }
-      </label>
-
-      <div class="linha">
-        <label> Cidade
-          <input
-            type="text"
-            name="cidade"
-            [(ngModel)]="candidato.cidade"
-            #cCidade="ngModel"
-            placeholder="Sua cidade"
-            maxlength="20"
-            minlength="2"
-            pattern="[A-Za-zÀ-ÿ' -]+"
-            required
-          >
-          @if (cCidade.invalid && cCidade.touched) {
-            <small class="campo-erro">Digite a cidade.</small>
-          }
-        </label>
-
-        <label class="estreito"> Estado
-          <select
-            name="estado"
-            [(ngModel)]="candidato.estado"
-            #cEstado="ngModel"
-            required
-          >
-            <option value="">UF</option>
-
-            @for (uf of estados; track uf) {
-              <option [value]="uf">{{ uf }}</option>
-            }
-          </select>
-          @if (cEstado.invalid && cEstado.touched) {
-            <small class="campo-erro">Tem que colocar o estadooo</small>
-          }
-        </label>
-      </div>
-
-      <label> Cargo pretendido
+      <!-- COMBOBOX: as marcas que vêm do banco-->
+      <label>
+        Marca
         <select
-          name="cargo"
-          [(ngModel)]="candidato.cargo"
-          #cCargo="ngModel"
+          name="id_marca"
+          [(ngModel)]="idMarca"
           required
         >
-          <option value="">Selecione o cargo</option>
+          <option value="">Selecione a marca</option>
 
-          @for (c of cargos; track c) {
-            <option [value]="c">{{ c }}</option>
+          @for (m of marcas; track m.id_marca) {
+            <option [value]="m.id_marca">{{ m.nome }}</option>
           }
         </select>
-        @if (cCargo.invalid && cCargo.touched) {
-          <small class="campo-erro">Escolha o cargo.</small>
-        }
       </label>
 
-      <label> LinkedIn (opcional)
-        <input
-          type="text"
-          name="linkedin"
-          [(ngModel)]="candidato.linkedin"
-          #cLinkedin="ngModel"
-          placeholder="linkedin.com/in/seunome"
-          maxlength="30"
-          pattern=".*linkedin\.com/.*"
-        >
-        @if (cLinkedin.invalid && cLinkedin.touched) {
-          <small class="campo-erro">Use o link do seu perfil, tipo linkedin.com/in/seunome.</small>
-        } @else {
-          <small class="campo-ajuda">Até 30 caracteres, pode tirar o https://www.</small>
-        }
-      </label>
-
-      <button type="submit" [disabled]="candidatoForm.invalid">
-        Enviar candidatura
+      <button type="submit" [disabled]="modeloForm.invalid">
+        Cadastrar
       </button>
-      <a href="#" (click)="irPara('login', $event)">Voltar</a>
+
     </form>
-  </div>
-}
 
-<!-- 3° Tela a principal -->
-
-@if (tela === 'principal') {
-
-  <div class="topo">
-    <span class="nome-sistema">
-      <span class="logo-pequeno"></span>
-      Revendedora de Carros
-    </span>
-
-    <span>
-      Usuário: <b>{{ usuario }}</b> |
-      <a href="#" (click)="sair($event)">Sair</a>
-    </span>
   </div>
 
-  <!--Abas da tela principal -->
-  <div class="abas">
-    <a href="#" [class.ativa]="aba === 'modelos'" (click)="trocarAba('modelos', $event)">Modelos</a>
-    <a href="#" [class.ativa]="aba === 'marcas'" (click)="trocarAba('marcas', $event)">Marcas</a>
-    <a href="#" [class.ativa]="aba === 'acessorios'" (click)="trocarAba('acessorios', $event)">Acessórios</a>
-    <a href="#" [class.ativa]="aba === 'carros'" (click)="trocarAba('carros', $event)">Carros</a>
-    <a href="#" [class.ativa]="aba === 'vinculos'" (click)="trocarAba('vinculos', $event)">Carros / Acessórios</a>
-    <a href="#" [class.ativa]="aba === 'conta'" (click)="trocarAba('conta', $event)">Alterar senha</a>
-  </div>
+  <!-- Tabela dos modelos cadastrados -->
+  <div class="caixa">
 
-  <!--Aba dos modelos -->
-  @if (aba === 'modelos') {
+    <h2>Seus modelos cadastrados</h2>
 
-    <!--Formulário de modelo e marca -->
-    <div class="caixa">
-      <h1>Cadastro</h1>
+    @if (lista.length === 0) {
 
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
+      <p>Você ainda não cadastrou nenhum modelo.</p>
 
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
+    } @else {
 
-      <form #modeloForm="ngForm" (ngSubmit)="cadastrarModelo()" novalidate>
+      <table>
+        <tbody>
 
-        <label> Modelo
-          <input
-            type="text"
-            name="modelo"
-            [(ngModel)]="modelo"
-            maxlength="50"
-            required
-          >
-        </label>
+          <tr>
+            <th>Modelo</th>
+            <th>Marca</th>
+          </tr>
 
-        <!-- COMBOBOX: as marcas que vêm do banco-->
-        <label> Marca
-          <select
-            name="id_marca"
-            [(ngModel)]="idMarca"
-            required
-          >
-            <option value="">Selecione a marca</option>
+          @for (l of lista; track $index) {
+            <tr>
+              <td>{{ l.modelo }}</td>
+              <td>{{ l.marca }}</td>
+            </tr>
+          }
 
-            @for (m of marcas; track m.id_marca) {
-              <option [value]="m.id_marca">{{ m.nome }}</option>
-            }
-          </select>
-        </label>
-
-        <button type="submit" [disabled]="modeloForm.invalid">
-          Cadastrar
-        </button>
-      </form>
-    </div>
-
-    <!-- Tabela dos modelos cadastrados -->
-    <div class="caixa">
-      <h2>Seus modelos cadastrados</h2>
-
-      @if (lista.length === 0) {
-        <p>Você ainda não cadastrou nenhum modelo.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>Modelo</th>
-                <th>Marca</th>
-                <th></th>
-              </tr>
-
-              @for (l of lista; track $index) {
-                <tr>
-                  <td>{{ l.modelo }}</td>
-                  <td>{{ l.marca }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirModelo(l)">Excluir</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </div>
-  }
-
-  <!-- Aba das marcas -->
-  @if (aba === 'marcas') {
-
-    <!-- Formulário da marca -->
-    <div class="caixa">
-
-      <h1>Cadastro de marca</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #marcaForm="ngForm" (ngSubmit)="cadastrarMarca()" novalidate>
-
-        <label> Marca
-          <input
-            type="text"
-            name="novaMarca"
-            [(ngModel)]="novaMarca"
-            maxlength="50"
-            required
-          >
-        </label>
-
-        <button type="submit" [disabled]="marcaForm.invalid">
-          Cadastrar
-        </button>
-
-      </form>
-
-    </div>
-
-    <!--Segunda confirmação-->
-    @if (marcaParaExcluir) {
-
-      <div class="caixa perigo">
-
-        <h2>Apagar a marca {{ marcaParaExcluir.nome }}</h2>
-
-        <p>Os modelos dessa marca e os carros deles também vão ser apagados. Pra ter certeza, digite seu login e sua senha.</p>
-
-        @if (erroExcluir !== '') {
-          <div class="aviso erro">{{ erroExcluir }}</div>
-        }
-
-        <form #excluirForm="ngForm" (ngSubmit)="confirmarExclusaoMarca()" novalidate>
-
-          <label>
-            Login
-            <input
-              type="text"
-              name="loginConfirma"
-              [(ngModel)]="loginConfirma"
-              maxlength="50"
-              required
-            >
-          </label>
-
-          <label>
-            Senha
-            <input
-              type="password"
-              name="senhaConfirma"
-              [(ngModel)]="senhaConfirma"
-              maxlength="10"
-              required
-            >
-          </label>
-
-          <button type="submit" class="excluir" [disabled]="excluirForm.invalid">
-            Apagar marca
-          </button>
-
-          <button type="button" (click)="cancelarExclusao()">
-            Cancelar
-          </button>
-
-        </form>
-
-      </div>
+        </tbody>
+      </table>
 
     }
 
-    <!-- Tabela da marca ordem alfabética-->
-    <div class="caixa">
-
-      <h2>Marcas cadastradas</h2>
-
-      @if (marcas.length === 0) {
-
-        <p>Nenhuma marca cadastrada ainda.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>Marca</th>
-                <th></th>
-              </tr>
-
-              @for (m of marcas; track m.id_marca) {
-                <tr>
-                  <td>{{ m.nome }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirMarca(m)">Excluir</button>
-                  </td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
-  }
-
-  <!-- Aba dos acessórios -->
-  @if (aba === 'acessorios') {
-
-    <!-- Formulário do acessório -->
-    <div class="caixa">
-
-      <h1>Cadastro de acessório</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #acessorioForm="ngForm" (ngSubmit)="cadastrarAcessorio()" novalidate>
-
-        <label> Acessório
-          <input
-            type="text"
-            name="novoAcessorio"
-            [(ngModel)]="novoAcessorio"
-            maxlength="50"
-            required
-          >
-        </label>
-
-        <button type="submit" [disabled]="acessorioForm.invalid">
-          Cadastrar
-        </button>
-
-      </form>
-
-    </div>
-
-    <!-- Tabela dos acessórios em ordem alfabética -->
-    <div class="caixa">
-
-      <h2>Acessórios cadastrados</h2>
-
-      @if (acessorios.length === 0) {
-
-        <p>Nenhum acessório cadastrado ainda.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>Acessório</th>
-                <th></th>
-              </tr>
-
-              @for (a of acessorios; track a.id_acessorio) {
-                <tr>
-                  <td>{{ a.nome }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirAcessorio(a)">Excluir</button>
-                  </td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
-  }
-
-
-  <!-- Aba dos carros -->
-  @if (aba === 'carros') {
-
-    <!-- Formulário do carro -->
-    <div class="caixa">
-
-      <h1>Cadastro de carro</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #carroForm="ngForm" (ngSubmit)="cadastrarCarro(carroForm)" novalidate>
-
-        <div class="linha">
-          <label> Placa
-            <input
-              type="text"
-              name="placa"
-              [(ngModel)]="novoCarro.placa"
-              #fPlaca="ngModel"
-              placeholder="ABC1234"
-              maxlength="7"
-              pattern="[A-Za-z0-9]{7}"
-              required
-            >
-            @if (fPlaca.invalid && fPlaca.touched) {
-              <small class="campo-erro">A placa tem 7 letras ou números.</small>
-            }
-          </label>
-
-          <label> Chassi
-            <input
-              type="text"
-              name="chassi"
-              [(ngModel)]="novoCarro.chassi"
-              #fChassi="ngModel"
-              placeholder="Número do chassi"
-              maxlength="30"
-              pattern="[A-Za-z0-9]{5,30}"
-              required
-            >
-            @if (fChassi.invalid && fChassi.touched) {
-              <small class="campo-erro">De 5 a 30 letras ou números.</small>
-            }
-          </label>
-        </div>
-
-        <!-- COMBOBOX: os modelos que a pessoa já cadastrou -->
-        <label> Modelo
-          <select
-            name="id_modelo"
-            [(ngModel)]="novoCarro.id_modelo"
-            required
-          >
-            <option value="">Selecione o modelo</option>
-
-            @for (l of lista; track l.id_modelo) {
-              <option [value]="l.id_modelo">{{ l.modelo }} - {{ l.marca }}</option>
-            }
-          </select>
-          @if (lista.length === 0) {
-            <small class="campo-ajuda">Cadastre um modelo na aba Modelos antes.</small>
-          }
-        </label>
-
-        <div class="linha">
-          <label> Cor
-            <input
-              type="text"
-              name="cor"
-              [(ngModel)]="novoCarro.cor"
-              #fCor="ngModel"
-              placeholder="Preto"
-              maxlength="30"
-              minlength="2"
-              pattern="[A-Za-zÀ-ÿ ]+"
-              required
-            >
-            @if (fCor.invalid && fCor.touched) {
-              <small class="campo-erro">Digite a cor, só com letras.</small>
-            }
-          </label>
-
-          <label class="estreito"> Ano
-            <input
-              type="text"
-              name="ano"
-              [(ngModel)]="novoCarro.ano"
-              #fAno="ngModel"
-              placeholder="2022"
-              inputmode="numeric"
-              maxlength="4"
-              pattern="[0-9]{4}"
-              required
-            >
-            @if (fAno.invalid && fAno.touched) {
-              <small class="campo-erro">4 números.</small>
-            }
-          </label>
-        </div>
-
-        <div class="linha">
-          <label> Valor (R$)
-            <input
-              type="text"
-              name="valor"
-              [(ngModel)]="novoCarro.valor"
-              #fValor="ngModel"
-              placeholder="35000,50"
-              inputmode="decimal"
-              maxlength="11"
-              pattern="[0-9]+([.,][0-9]{1,2})?"
-              required
-            >
-            @if (fValor.invalid && fValor.touched) {
-              <small class="campo-erro">Digite um valor, tipo 35000 ou 35000,50.</small>
-            }
-          </label>
-
-          <label> Quilometragem
-            <input
-              type="text"
-              name="quilometragem"
-              [(ngModel)]="novoCarro.quilometragem"
-              #fKm="ngModel"
-              placeholder="82000"
-              inputmode="numeric"
-              maxlength="7"
-              pattern="[0-9]+"
-              required
-            >
-            @if (fKm.invalid && fKm.touched) {
-              <small class="campo-erro">Só números inteiros.</small>
-            }
-          </label>
-        </div>
-
-        <label> Situação
-          <select
-            name="situacao"
-            [(ngModel)]="novoCarro.situacao"
-            required
-          >
-            <option value="">Selecione a situação</option>
-            <option value="D">Disponível</option>
-            <option value="V">Vendido</option>
-          </select>
-        </label>
-
-        <button type="submit" [disabled]="carroForm.invalid">
-          Cadastrar
-        </button>
-
-      </form>
-
-    </div>
-
-    <!-- Tabela dos carros cadastrados -->
-    <div class="caixa">
-
-      <h2>Seus carros cadastrados</h2>
-
-      @if (carros.length === 0) {
-
-        <p>Você ainda não cadastrou nenhum carro.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>Placa</th>
-                <th>Chassi</th>
-                <th>Modelo</th>
-                <th>Cor</th>
-                <th>Ano</th>
-                <th>Valor</th>
-                <th>Km</th>
-                <th>Situação</th>
-                <th></th>
-              </tr>
-
-              @for (c of carros; track c.id_carro) {
-                <tr>
-                  <td>{{ c.placa }}</td>
-                  <td>{{ c.chassi }}</td>
-                  <td>{{ c.modelo }} - {{ c.marca }}</td>
-                  <td>{{ c.cor }}</td>
-                  <td>{{ c.ano }}</td>
-                  <td>R$ {{ c.valor }}</td>
-                  <td>{{ c.quilometragem }}</td>
-                  <td>{{ c.situacao === 'D' ? 'Disponível' : 'Vendido' }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirCarro(c)">Excluir</button>
-                  </td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
-  }
-
-
-  <!-- Aba dos carros e acessórios -->
-  @if (aba === 'vinculos') {
-
-    <!-- Formulário: escolhe o carro e o acessório -->
-    <div class="caixa">
-
-      <h1>Acessórios do carro</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #vinculoForm="ngForm" (ngSubmit)="vincular()" novalidate>
-
-        <!-- COMBOBOX: os carros cadastrados -->
-        <label> Carro
-          <select
-            name="id_carro"
-            [(ngModel)]="vinculo.id_carro"
-            required
-          >
-            <option value="">Selecione o carro</option>
-
-            @for (c of carros; track c.id_carro) {
-              <option [value]="c.id_carro">{{ c.placa }} - {{ c.modelo }}</option>
-            }
-          </select>
-          @if (carros.length === 0) {
-            <small class="campo-ajuda">Cadastre um carro na aba Carros antes.</small>
-          }
-        </label>
-
-        <!-- COMBOBOX: os acessórios cadastrados -->
-        <label> Acessório
-          <select
-            name="id_acessorio"
-            [(ngModel)]="vinculo.id_acessorio"
-            required
-          >
-            <option value="">Selecione o acessório</option>
-
-            @for (a of acessorios; track a.id_acessorio) {
-              <option [value]="a.id_acessorio">{{ a.nome }}</option>
-            }
-          </select>
-          @if (acessorios.length === 0) {
-            <small class="campo-ajuda">Cadastre um acessório na aba Acessórios antes.</small>
-          }
-        </label>
-
-        <button type="submit" [disabled]="vinculoForm.invalid">
-          Colocar no carro
-        </button>
-
-      </form>
-
-    </div>
-
-    <!-- Tabela: acessórios que foram colocados em cada carro -->
-    <div class="caixa">
-
-      <h2>Acessórios relacionados aos carros</h2>
-
-      @if (vinculos.length === 0) {
-
-        <p>Nenhum acessório foi colocado em um carro ainda.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>ID carro</th>
-                <th>Placa</th>
-                <th>ID acessório</th>
-                <th>Acessório</th>
-                <th></th>
-              </tr>
-
-              @for (v of vinculos; track $index) {
-                <tr>
-                  <td>{{ v.id_carro }}</td>
-                  <td>{{ v.placa }}</td>
-                  <td>{{ v.id_acessorio }}</td>
-                  <td>{{ v.acessorio }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirVinculo(v)">Excluir</button>
-                  </td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
-  }
-
-
-  <!--Alterar senha/ o datagrid la-->
-  @if (aba === 'conta') {
-
-    <div class="caixa">
-
-      <h1>Alterar senha</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #senhaForm="ngForm" (ngSubmit)="alterarSenha()" novalidate>
-
-        <label>
-          Senha atual
-          <input
-            type="password"
-            name="senhaAtual"
-            [(ngModel)]="senhaAtual"
-            maxlength="10"
-            required
-          >
-        </label>
-
-        <label>
-          Nova senha
-          <input
-            type="password"
-            name="novaSenha"
-            [(ngModel)]="novaSenha"
-            maxlength="10"
-            required
-          >
-        </label>
-
-        <label>
-          Confirmação
-          <input
-            type="password"
-            name="confirmacao"
-            [(ngModel)]="confirmacao"
-            maxlength="10"
-            required
-          >
-        </label>
-
-        <button type="submit" [disabled]="senhaForm.invalid">
-          Alterar senha
-        </button>
-
-      </form>
-
-    </div>
-
-    <!--Datagrid-->
-    <div class="caixa">
-
-      <h2>Histórico de acessos ao sistema</h2>
-
-      @if (historico.length === 0) {
-
-        <p>Nenhum acesso registrado para este usuário.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>Número</th>
-                <th>Data do login</th>
-                <th>Hora do login</th>
-              </tr>
-
-              @for (h of historico; track $index) {
-                <tr>
-                  <td>{{ $index + 1 }}</td>
-                  <td>{{ h.data }}</td>
-                  <td>{{ h.hora }}</td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
-  }
+  </div>
 
 }
