@@ -1,0 +1,37 @@
+1° Ligar o XAMPP lá
+
+2° Olhar o conexao.php no VsCode, olhar/editar a porta e a senha
+
+3° executar o banco.sql lá no MySql
+
+4° Após tudo isso, colocar no navegador
+
+http://localhost/Interdisciplinar_v2/login.php
+
+5° Caso queira adicionar uma nova marca no Banco de Dados, utilizar esse comando
+
+INSERT INTO bd_revendedoracarros.tb_marca (nome) VALUES ('MARCA);
+
+
+6° Uma maneira de ver oque cada usuário digitou
+
+SELECT u.login AS usuario, mo.nome AS modelo, ma.nome AS marca
+FROM bd_revendedoracarros.tb_modelo mo
+JOIN bd_revendedoracarros.tb_marca ma ON ma.id_marca = mo.id_marca
+JOIN bd_revendedoracarros.tb_usuario u ON u.login = mo.login
+ORDER BY u.login, mo.id_modelo;
+
+Uma maneira mais rápida e direta, pode usar
+
+SELECT * FROM bd_revendedoracarros.tb_modelo;
+
+6° Caso queira ver o usuário específico, usar esse comando e trocar o nome de acordo com o nome de usuário
+
+SELECT mo.nome AS modelo, ma.nome AS marca
+FROM bd_revendedoracarros.tb_modelo mo
+JOIN bd_revendedoracarros.tb_marca ma ON ma.id_marca = mo.id_marca
+WHERE mo.login = 'COLOCAR_NOME_USUARIO';
+
+7° Caso queira ver os usuários cadastrados e as senhas, usar o comando
+
+SELECT * FROM bd_revendedoracarros.tb_usuario;
