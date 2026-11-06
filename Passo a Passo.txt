@@ -64,14 +64,4 @@ JOIN bd_revendedoracarros.tb_marca ma ON ma.id_marca = mo.id_marca
 JOIN bd_revendedoracarros.tb_usuario u ON u.login = mo.login
 ORDER BY u.login, mo.id_modelo;
 
-Para ver os acessórios de cada carro (INNER JOIN):
-SELECT c.id_carro, c.placa, a.id_acessorio, a.nome
-FROM bd_revendedoracarros.tb_carro_acessorio ca
-INNER JOIN bd_revendedoracarros.tb_carro c ON ca.id_carro = c.id_carro
-INNER JOIN bd_revendedoracarros.tb_acessorio a ON ca.id_acessorio = a.id_acessorio;
 
-Para ver os carros:
-SELECT * FROM bd_revendedoracarros.tb_carro;
-
-Se o banco já existe e vc não quer perder os dados, em vez do banco.sql rode só o novas_tabelas.sql
-(ele cria tb_acessorio, tb_carro e tb_carro_acessorio).

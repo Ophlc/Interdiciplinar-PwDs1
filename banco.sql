@@ -30,14 +30,14 @@ CREATE TABLE tb_modelo (
   login VARCHAR(50) NOT NULL,  -- guarda qual usuário cadastrou o modelo
   PRIMARY KEY (id_modelo),
 
-  -- esse "on delete cascade" é se apagar a marca, os modelos dela são apagados junto
+  -- on delete cascade se apagar a marca, os modelos dela são apagados junto
   FOREIGN KEY (id_marca) REFERENCES tb_marca (id_marca) ON DELETE CASCADE,
 
   FOREIGN KEY (login) REFERENCES tb_usuario (login)
 );
 
 
---Guarda cada vez que a pessoa entrou
+-- Guarda cada vez que a pessoa faz login
 CREATE TABLE tb_log_login (
   id_log INT NOT NULL AUTO_INCREMENT,
   login VARCHAR(50) NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE tb_log_login (
 );
 
 
---Parte do formulário
+-- Candidatos do formulário
 CREATE TABLE tb_trabalheconosco (
   id_candidato INT NOT NULL AUTO_INCREMENT,
   nome VARCHAR(50) NOT NULL,
@@ -61,55 +61,6 @@ CREATE TABLE tb_trabalheconosco (
 );
 
 
---Acessórios que o carro pd ter (um cadastro só, igual as marcas)
-CREATE TABLE tb_acessorio (
-  id_acessorio INT NOT NULL AUTO_INCREMENT,
-  nome VARCHAR(50) NOT NULL,
-  PRIMARY KEY (id_acessorio),
-
-  -- Não deixa ter dois acessórios com o msm nome
-  UNIQUE (nome)
-);
-
-
---Os carros, cada carro tem um modelo (e o modelo já tem a marca)
-CREATE TABLE tb_carro (
-  id_carro INT NOT NULL AUTO_INCREMENT,
-  placa VARCHAR(10) NOT NULL,
-  chassi VARCHAR(30) NOT NULL,
-  cor VARCHAR(30) NOT NULL,
-  ano INT NOT NULL,
-  valor DECIMAL(10,2) NOT NULL,
-  quilometragem INT NOT NULL,
-  situacao ENUM('D','V') NOT NULL DEFAULT 'D',  -- D = disponível, V = vendido
-  id_modelo INT NOT NULL,
-  PRIMARY KEY (id_carro),
-
-  -- placa e chassi não pd repetir
-  UNIQUE (placa),
-  UNIQUE (chassi),
-
-  -- ano, valor e quilometragem não pode ser negativo
-  CHECK (ano >= 1900),
-  CHECK (valor > 0),
-  CHECK (quilometragem >= 0),
-
-  -- se apagar o modelo, os carros dele são apagados junto
-  FOREIGN KEY (id_modelo) REFERENCES tb_modelo (id_modelo) ON DELETE CASCADE
-);
-
-
--- Liga os carros nos acessórios
-CREATE TABLE tb_carro_acessorio (
-  id_carro INT NOT NULL,
-  id_acessorio INT NOT NULL,
-  PRIMARY KEY (id_carro, id_acessorio),   -- o msm acessório não entra 2x no msm carro
-
-  FOREIGN KEY (id_carro) REFERENCES tb_carro (id_carro) ON DELETE CASCADE,
-  FOREIGN KEY (id_acessorio) REFERENCES tb_acessorio (id_acessorio) ON DELETE CASCADE
-);
-
-
 INSERT INTO tb_marca (nome) VALUES
   ('Chevrolet'),
   ('Fiat'),
@@ -119,15 +70,3 @@ INSERT INTO tb_marca (nome) VALUES
   ('Honda'),
   ('Hyundai'),
   ('Renault');
-
-INSERT INTO tb_acessorio (nome) VALUES
-  ('Ar condicionado'),
-  ('Roda de liga leve'),
-  ('Vidro elétrico'),
-  ('Banco de couro'),
-  ('Faróis de LED'),
-  ('Sensor de estacionamento'),
-  ('Rack decorativo'),
-  ('Suporte para celular'),
-  ('Direção elétrica'),
-  ('Repetidor de seta');
