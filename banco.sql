@@ -37,7 +37,7 @@ CREATE TABLE tb_modelo (
 );
 
 
--- Guarda cada vez que a pessoa entrou
+--Guarda cada vez que a pessoa entrou
 CREATE TABLE tb_log_login (
   id_log INT NOT NULL AUTO_INCREMENT,
   login VARCHAR(50) NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE tb_log_login (
 );
 
 
--- Parte do formulário
+--Parte do formulário
 CREATE TABLE tb_trabalheconosco (
   id_candidato INT NOT NULL AUTO_INCREMENT,
   nome VARCHAR(50) NOT NULL,
@@ -55,13 +55,13 @@ CREATE TABLE tb_trabalheconosco (
   celular VARCHAR(11) NOT NULL,          
   cidade VARCHAR(20) NOT NULL,
   estado VARCHAR(2) NOT NULL,          
-  cargo_pretendido VARCHAR(50) NOT NULL,
+  cargo_pretendido VARCHAR(20) NOT NULL,
   link_linkdin VARCHAR(30) NULL,
   PRIMARY KEY (id_candidato)
 );
 
 
--- Acessórios que o carro pd ter (um cadastro só, igual as marcas)
+--Acessórios que o carro pd ter (um cadastro só, igual as marcas)
 CREATE TABLE tb_acessorio (
   id_acessorio INT NOT NULL AUTO_INCREMENT,
   nome VARCHAR(50) NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE tb_acessorio (
 );
 
 
--- Os carros, cada carro tem um modelo (e o modelo já tem a marca)
+--Os carros, cada carro tem um modelo (e o modelo já tem a marca)
 CREATE TABLE tb_carro (
   id_carro INT NOT NULL AUTO_INCREMENT,
   placa VARCHAR(10) NOT NULL,

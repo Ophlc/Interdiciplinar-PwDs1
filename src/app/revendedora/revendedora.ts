@@ -54,7 +54,7 @@ interface Resposta {
   dados?: any;
 }
 
-const API = '/api/revendedora';
+const API = 'http://localhost/api-revendedora/api.php';
 
 @Component({
   selector: 'app-revendedora',
@@ -130,7 +130,7 @@ export class Revendedora implements OnInit {
       error: (erro) => {
         console.error('Erro ao verificar a sessão:', erro);
         this.irPara('login');
-        this.erro = erro.error?.mensagem ?? 'Não foi possível conectar ao servidor.';
+        this.erro = 'Não foi possível conectar ao servidor.';
         this.atualizar();
       }
     });
@@ -158,7 +158,7 @@ export class Revendedora implements OnInit {
       // acaba  sessão
       this.irPara('login');
     } else {
-      this.erro = erro.error?.mensagem ?? 'Não foi possível conectar ao servidor.';
+      this.erro = 'Não foi possível conectar ao servidor.';
     }
 
     this.atualizar();

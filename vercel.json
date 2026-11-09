@@ -1,9 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "angular",
-  "buildCommand": "npm run build",
-  "installCommand": "npm ci",
-  "outputDirectory": "dist/revendedora/browser",
-  "functions": { "api/revendedora.mjs": { "maxDuration": 30 } },
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
-}
