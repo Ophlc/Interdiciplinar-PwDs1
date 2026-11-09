@@ -1,18 +1,23 @@
 <?php
-// Libera o Angular (porta 4200) pra falar com o PHP.
-// O Allow-Credentials é oq faz o login funcionar.
-header('Access-Control-Allow-Origin: http://localhost:4200');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+// Em produção o Angular usa o proxy da Vercel no mesmo domínio.
+// Para acesso direto no desenvolvimento, permita apenas a origem configurada.
+$origemPermitida = getenv('APP_ORIGIN') ?: 'http://localhost:4200';
+if (($_SERVER['HTTP_ORIGIN'] ?? '') === $origemPermitida) {
+    header('Access-Control-Allow-Origin: ' . $origemPermitida);
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Vary: Origin');
+}
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: private, no-store');
 
 // Antes do POST o navegador manda um OPTIONS
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
 
-session_start();
+session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax', 'use_strict_mode' => true]);
 
 // Pega aquele json que o Angular mandou
 $dados = json_decode(file_get_contents('php://input'), true);
@@ -50,6 +55,7 @@ try {
 
         // password_verify compara a senha
         if ($usuarioBanco && password_verify($senha, $usuarioBanco['senha'])) {
+            session_regenerate_id(true);
             $_SESSION['usuario'] = $usuarioBanco['login'];
 
             // guarda no log a data e a hora desse login
@@ -64,6 +70,8 @@ try {
 
     // Meter o pé
     elseif ($acao == 'logout') {
+        $_SESSION = [];
+        setcookie(session_name(), '', ['expires' => time() - 3600, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
         session_destroy();
         echo json_encode(['sucesso' => true]);
     }

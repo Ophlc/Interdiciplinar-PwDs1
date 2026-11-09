@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+out-tsc/
+.vercel/
+.env
+.env.*
+!.env.example
+api-revendedora/config.local.php
+playwright-report/
+test-results/
