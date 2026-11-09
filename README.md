@@ -57,40 +57,94 @@ O arquivo `banco.sql` contém os comandos necessários para criar o banco de dad
 
 ## Como executar o projeto
 
-O repositório já é um projeto Angular completo. Não é necessário executar `ng new`, instalar o Angular CLI globalmente ou copiar a pasta `src` para outro projeto.
+Para conseguir executar o sistema no computador, é necessário ter instalado:
 
-### Publicar e atualizar pelo GitHub
+- Node.js e npm.
+- Visual Studio Code.
+- Angular CLI.
+- XAMPP.
+- MySQL Workbench.
 
-Siga o guia [DEPLOY.md](DEPLOY.md) para importar o front-end na Vercel e conectar uma hospedagem PHP/MySQL. Após a configuração inicial, cada **push na branch `main`** dispara uma atualização do site no mesmo endereço. O PHP e o MySQL são mantidos; o proxy `/api/revendedora` conecta o Angular à API hospedada.
+### 1. Configurando o Angular
 
-**Estado da hospedagem:** os arquivos de deploy estão preparados. É necessário importar o repositório na Vercel e conectar uma hospedagem PHP/MySQL antes de usar login e cadastros online.
-
-### Desenvolvimento local
-
-Requisitos: Node.js 24 e Docker Compose.
+Primeiro, abra o PowerShell e execute o seguinte comando:
 
 ```bash
-cp .env.example .env
-# Defina DB_PASSWORD e DB_ROOT_PASSWORD no .env.
-docker compose up -d --build
-npm ci
-npm start
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-Abra `http://localhost:4200`. O Docker prepara PHP/MySQL e os dados permanecem no volume do banco. Você também pode usar uma hospedagem/XAMPP já existente; os caminhos e variáveis estão no guia de publicação.
+Caso seja solicitada uma confirmação, autorize a alteração.
 
-### Versões históricas
+Depois, instale o Angular CLI:
 
-As releases preservam os commits originais das quatro branches solicitadas, nesta ordem:
+```bash
+npm install -g @angular/cli
+```
 
-| Release | Branch |
-|---|---|
-| [v1.0.0](https://github.com/Ophlc/Interdiciplinar-PwDs1/releases/tag/v1.0.0) | `InterdisciplinarAPI` |
-| [v2.0.0](https://github.com/Ophlc/Interdiciplinar-PwDs1/releases/tag/v2.0.0) | `InterdiciplinarSemAPI` |
-| [v3.0.0](https://github.com/Ophlc/Interdiciplinar-PwDs1/releases/tag/v3.0.0) | `InterdiciplinarAngular1` |
-| [v4.0.0](https://github.com/Ophlc/Interdiciplinar-PwDs1/releases/tag/v4.0.0) | `InterdiciplinarAngular2` |
+Para conferir se a instalação deu certo, utilize:
 
-As demais branches permanecem disponíveis no GitHub. A `main` contém o projeto atual, com Angular versão 6 conforme a identificação histórica do trabalho; a versão do framework utilizada no build está no `package.json`.
+```bash
+ng version
+```
+
+### 2. Criando o projeto Angular
+
+Crie uma pasta para o projeto e abra essa pasta no Visual Studio Code.
+
+No terminal, execute:
+
+```bash
+ng new primeiro-projeto
+```
+
+Durante a criação, selecione as seguintes opções:
+
+- Compartilhamento de dados: No.
+- Sistema de estilos: CSS.
+- SSR/SSG: No.
+
+Depois, entre na pasta criada e execute o projeto:
+
+```bash
+cd primeiro-projeto
+ng serve -o
+```
+
+### 3. Configurando a API PHP
+
+Para configurar a parte do Back-End:
+
+1. Abra o XAMPP e inicie o Apache.
+2. Copie a pasta `api-revendedora` para dentro da pasta `htdocs` do XAMPP.
+3. Abra o arquivo `conexao.php`.
+4. Confira as informações de conexão com o MySQL, como host, porta, usuário e senha.
+5. Caso necessário, altere essas informações de acordo com a configuração do seu computador.
+
+### 4. Configurando o banco de dados
+
+Abra o MySQL Workbench e execute o arquivo `banco.sql`.
+
+Esse arquivo contém os comandos para criar o banco de dados, as tabelas e alguns registros iniciais utilizados pelo sistema.
+
+**Importante:** o script apaga o banco de dados existente antes de criar um novo. Por isso, tenha cuidado ao executá-lo caso já existam informações salvas.
+
+### 5. Configurando o Front-End
+
+Depois de criar o projeto Angular, copie a pasta `src` disponibilizada neste repositório para dentro da pasta do projeto criado, substituindo os arquivos correspondentes.
+
+Com tudo configurado, abra o terminal do Visual Studio Code e execute:
+
+```bash
+ng serve -o
+```
+
+O sistema poderá ser acessado pelo navegador através do endereço:
+
+```text
+http://localhost:4200
+```
+
+A API PHP também precisa estar funcionando pelo Apache do XAMPP para que o sistema consiga se comunicar com o banco de dados.
 
 ## Estrutura do projeto
 
@@ -101,8 +155,7 @@ InterdiciplinarAngular6/
 │
 ├── api-revendedora/
 │   ├── api.php
-│   ├── conexao.php
-│   └── Dockerfile
+│   └── conexao.php
 │
 ├── src/
 │   ├── app/
@@ -120,16 +173,6 @@ InterdiciplinarAngular6/
 │   ├── main.ts
 │   └── styles.css
 │
-├── api/
-│   └── revendedora.mjs
-├── database/
-│   └── schema.sql
-├── angular.json
-├── package.json
-├── package-lock.json
-├── vercel.json
-├── compose.yaml
-├── DEPLOY.md
 ├── banco.sql
 ├── Passo a Passo.txt
 └── README.md
