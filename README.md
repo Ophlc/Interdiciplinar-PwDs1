@@ -186,6 +186,6 @@ Durante o desenvolvimento, trabalhamos com diferentes tecnologias e aprendemos u
 
 ---
 
-**Desenvolvido por System of <Devs>**
+**Desenvolvido por System of Devs**
 
 Projeto Interdisciplinar — Angular, versão 6.
