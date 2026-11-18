@@ -161,19 +161,6 @@ Placa e chassi são obrigatórios e únicos. O sistema também valida ano, valor
 
 A quilometragem aceita zero, e o valor do veículo deve ser maior que zero.
 
-### Qual arquivo SQL utilizar?
-
-| Situação | O que fazer |
-|---|---|
-| Criar ou recriar o banco do zero | Executar somente `banco.sql` desta versão. |
-| Atualizar um banco antigo, anterior às funções de admin e logs | Fazer backup e executar `atualizar_banco.sql`. |
-| Já ter admin e logs e aplicar apenas a confirmação de exclusão para todos | Substituir os arquivos da aplicação; não executar SQL novamente. |
-| Apenas parar e iniciar Angular, Apache ou MySQL | Não executar nenhum SQL. Os dados continuam salvos. |
-
-**Atenção:** `banco.sql` apaga o banco existente e recria todas as tabelas. Ele já contém as atualizações desta versão.
-
-O arquivo `atualizar_banco.sql` preserva os cadastros existentes.
-
 ## Como executar o projeto
 
 ### 1. Preparar o ambiente
