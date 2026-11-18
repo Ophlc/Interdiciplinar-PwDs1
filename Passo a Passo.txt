@@ -45,8 +45,8 @@ ng serve -o
 Linha 3: Veja se a porta está de acordo com a porta da máquina em que vc está.
 Linha 6: Veja a senha se está de acordo com a mesma senha do MySql da máquina que cê tá.
 
-12°Execute o arquivo banco.sql, no MySql Workbench
-(ele apaga e cria o banco de novo, então todos os dados somem. Rode de novo sempre que o banco mudar)
+12° No MySQL Workbench: se o banco já existe, execute atualizar_banco.sql.
+Só use banco.sql em uma instalação nova: ele apaga todos os dados anteriores.
 
 13° Copie e cole o src lá na pasta Teste que está em Documentos
 
@@ -72,6 +72,3 @@ INNER JOIN bd_revendedoracarros.tb_acessorio a ON ca.id_acessorio = a.id_acessor
 
 Para ver os carros:
 SELECT * FROM bd_revendedoracarros.tb_carro;
-
-Se o banco já existe e vc não quer perder os dados, em vez do banco.sql rode só o novas_tabelas.sql
-(ele cria tb_acessorio, tb_carro e tb_carro_acessorio).

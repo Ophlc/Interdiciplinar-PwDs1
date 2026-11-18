@@ -1,5 +1,18 @@
 # Interdisciplinar Angular versão 6 — Revendedora de Carros
 
+## Atualização de admin e logs
+
+Se o banco já existe, execute `atualizar_banco.sql` no Workbench. Ele preserva
+os dados. Depois substitua `api.php` e `src`, mantendo o seu `conexao.php`.
+O passo a passo completo está em **LEIA PRIMEIRO - Atualizacao.txt**.
+
+O administrador inicial usa login `admin` e senha `admin123`. Ele vê os dados
+de todos, gerencia usuários e candidaturas e acessa o log geral. As exclusões de usuários comuns e do admin
+exigem as credenciais da conta logada e a própria conta fica protegida. Usuários comuns
+consultam suas atividades resumidas; o admin consulta também os detalhes.
+Os logs de modelos, marcas, carros e geral podem ser ocultados, exportados
+em CSV e copiados para a área de transferência.
+
 ## Sobre o projeto
 
 Este projeto foi desenvolvido como parte de uma atividade interdisciplinar da aula de Programação Web 2 e Desenvolvimento de Sistemas 1, com a proposta de criar um sistema para uma revendedora de carros.

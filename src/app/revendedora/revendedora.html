@@ -260,20 +260,44 @@
     </span>
 
     <span>
-      Usuário: <b>{{ usuario }}</b> |
+      {{ admin ? 'Administrador' : 'Usuário' }}: <b>{{ usuario }}</b> |
       <a href="#" (click)="sair($event)">Sair</a>
     </span>
   </div>
 
   <!--Abas da tela principal -->
-  <div class="abas">
+  <div class="abas" [class.abas-admin]="admin">
     <a href="#" [class.ativa]="aba === 'modelos'" (click)="trocarAba('modelos', $event)">Modelos</a>
     <a href="#" [class.ativa]="aba === 'marcas'" (click)="trocarAba('marcas', $event)">Marcas</a>
     <a href="#" [class.ativa]="aba === 'acessorios'" (click)="trocarAba('acessorios', $event)">Acessórios</a>
     <a href="#" [class.ativa]="aba === 'carros'" (click)="trocarAba('carros', $event)">Carros</a>
     <a href="#" [class.ativa]="aba === 'vinculos'" (click)="trocarAba('vinculos', $event)">Carros / Acessórios</a>
     <a href="#" [class.ativa]="aba === 'conta'" (click)="trocarAba('conta', $event)">Alterar senha</a>
+    @if (admin) {
+      <a href="#" [class.ativa]="aba === 'usuarios'" (click)="trocarAba('usuarios', $event)">Usuários</a>
+      <a href="#" [class.ativa]="aba === 'candidaturas'" (click)="trocarAba('candidaturas', $event)">Candidaturas</a>
+      <a href="#" [class.ativa]="aba === 'logs'" (click)="trocarAba('logs', $event)">Log geral</a>
+    }
   </div>
+
+  @if (exclusaoPendente) {
+    <div class="caixa perigo" id="confirmacao-exclusao">
+      <h2>Confirmar exclusão</h2>
+      <p>Você vai excluir {{ exclusaoPendente.descricao }}. Esta ação não pode ser desfeita.</p>
+      <p>Digite o login e a senha da conta que está logada.</p>
+      @if (erroExclusao) { <p class="aviso erro" role="alert">{{ erroExclusao }}</p> }
+      <form #exclusaoForm="ngForm" (ngSubmit)="confirmarExclusao()">
+        <label>Login
+          <input id="login-exclusao" name="loginExclusao" [(ngModel)]="loginExclusao" maxlength="50" autocomplete="username" required [disabled]="excluindo">
+        </label>
+        <label>Senha
+          <input type="password" name="senhaExclusao" [(ngModel)]="senhaExclusao" maxlength="10" autocomplete="current-password" required [disabled]="excluindo">
+        </label>
+        <button type="submit" class="excluir" [disabled]="exclusaoForm.invalid || excluindo">{{ excluindo ? 'Excluindo...' : 'Confirmar exclusão' }}</button>
+        <button type="button" (click)="cancelarExclusao()" [disabled]="excluindo">Cancelar</button>
+      </form>
+    </div>
+  }
 
   <!--Aba dos modelos -->
   @if (aba === 'modelos') {
@@ -328,7 +352,7 @@
       <h2>Seus modelos cadastrados</h2>
 
       @if (lista.length === 0) {
-        <p>Você ainda não cadastrou nenhum modelo.</p>
+        <p>Nenhum modelo cadastrado para exibir.</p>
 
       } @else {
 
@@ -339,6 +363,7 @@
               <tr>
                 <th>Modelo</th>
                 <th>Marca</th>
+                @if (admin) { <th>Usuário</th> }
                 <th></th>
               </tr>
 
@@ -346,6 +371,7 @@
                 <tr>
                   <td>{{ l.modelo }}</td>
                   <td>{{ l.marca }}</td>
+                  @if (admin) { <td>{{ l.proprietario }}</td> }
                   <td>
                     <button type="button" class="excluir" (click)="excluirModelo(l)">Excluir</button>
                   </td>
@@ -393,57 +419,6 @@
       </form>
 
     </div>
-
-    <!--Segunda confirmação-->
-    @if (marcaParaExcluir) {
-
-      <div class="caixa perigo">
-
-        <h2>Apagar a marca {{ marcaParaExcluir.nome }}</h2>
-
-        <p>Os modelos dessa marca e os carros deles também vão ser apagados. Pra ter certeza, digite seu login e sua senha.</p>
-
-        @if (erroExcluir !== '') {
-          <div class="aviso erro">{{ erroExcluir }}</div>
-        }
-
-        <form #excluirForm="ngForm" (ngSubmit)="confirmarExclusaoMarca()" novalidate>
-
-          <label>
-            Login
-            <input
-              type="text"
-              name="loginConfirma"
-              [(ngModel)]="loginConfirma"
-              maxlength="50"
-              required
-            >
-          </label>
-
-          <label>
-            Senha
-            <input
-              type="password"
-              name="senhaConfirma"
-              [(ngModel)]="senhaConfirma"
-              maxlength="10"
-              required
-            >
-          </label>
-
-          <button type="submit" class="excluir" [disabled]="excluirForm.invalid">
-            Apagar marca
-          </button>
-
-          <button type="button" (click)="cancelarExclusao()">
-            Cancelar
-          </button>
-
-        </form>
-
-      </div>
-
-    }
 
     <!-- Tabela da marca ordem alfabética-->
     <div class="caixa">
@@ -622,7 +597,7 @@
             <option value="">Selecione o modelo</option>
 
             @for (l of lista; track l.id_modelo) {
-              <option [value]="l.id_modelo">{{ l.modelo }} - {{ l.marca }}</option>
+              <option [value]="l.id_modelo">{{ l.modelo }} - {{ l.marca }}{{ admin ? ' (' + l.proprietario + ')' : '' }}</option>
             }
           </select>
           @if (lista.length === 0) {
@@ -729,7 +704,7 @@
 
       @if (carros.length === 0) {
 
-        <p>Você ainda não cadastrou nenhum carro.</p>
+        <p>Nenhum carro cadastrado para exibir.</p>
 
       } @else {
 
@@ -739,6 +714,7 @@
 
               <tr>
                 <th>Placa</th>
+                @if (admin) { <th>Usuário</th> }
                 <th>Chassi</th>
                 <th>Modelo</th>
                 <th>Cor</th>
@@ -752,6 +728,7 @@
               @for (c of carros; track c.id_carro) {
                 <tr>
                   <td>{{ c.placa }}</td>
+                  @if (admin) { <td>{{ c.proprietario }}</td> }
                   <td>{{ c.chassi }}</td>
                   <td>{{ c.modelo }} - {{ c.marca }}</td>
                   <td>{{ c.cor }}</td>
@@ -959,6 +936,7 @@
 
               <tr>
                 <th>Número</th>
+                @if (admin) { <th>Usuário</th> }
                 <th>Data do login</th>
                 <th>Hora do login</th>
               </tr>
@@ -966,6 +944,7 @@
               @for (h of historico; track $index) {
                 <tr>
                   <td>{{ $index + 1 }}</td>
+                  @if (admin) { <td>{{ h.usuario }}</td> }
                   <td>{{ h.data }}</td>
                   <td>{{ h.hora }}</td>
                 </tr>
@@ -979,6 +958,112 @@
 
     </div>
 
+  }
+
+
+  @if (admin && aba === 'usuarios') {
+    <div class="caixa">
+      <h1>Usuários cadastrados</h1>
+      @if (msg) { <p class="aviso ok" role="status">{{ msg }}</p> }
+      @if (erro) { <p class="aviso erro" role="alert">{{ erro }}</p> }
+      <p>A senha é exibida como hash. A conta do administrador não pode ser excluída.</p>
+      <div class="tabela-responsiva">
+        <table>
+          <thead><tr><th>Login</th><th>Perfil</th><th>Hash da senha</th><th>Ação</th></tr></thead>
+          <tbody>
+            @for (conta of usuarios; track conta.login) {
+              <tr>
+                <td>{{ conta.login }}</td><td>{{ conta.perfil }}</td>
+                <td class="senha-hash"><code>{{ conta.senha_hash }}</code></td>
+                <td>
+                  @if (conta.perfil === 'admin' || conta.login === usuario) {
+                    <span>Conta protegida</span>
+                  } @else {
+                    <button class="excluir" type="button" (click)="excluirUsuario(conta)">Excluir</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (admin && aba === 'candidaturas') {
+    <div class="caixa">
+      <h1>Candidaturas recebidas</h1>
+      @if (msg) { <p class="aviso ok" role="status">{{ msg }}</p> }
+      @if (erro) { <p class="aviso erro" role="alert">{{ erro }}</p> }
+      @if (!candidaturas.length) { <p>Nenhuma candidatura recebida.</p> }
+      @else {
+        <div class="tabela-responsiva">
+          <table>
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Celular</th><th>Cidade / UF</th><th>Cargo</th><th>LinkedIn</th><th>Ação</th></tr></thead>
+            <tbody>
+              @for (c of candidaturas; track c.id_candidato) {
+                <tr>
+                  <td>{{ c.nome }}</td><td>{{ c.email }}</td><td>{{ c.celular }}</td>
+                  <td>{{ c.cidade }} / {{ c.estado }}</td><td>{{ c.cargo_pretendido }}</td>
+                  <td>{{ c.link_linkdin || 'Não informado' }}</td>
+                  <td><button class="excluir" type="button" (click)="excluirCandidatura(c)">Excluir</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Um painel reaproveitado nas três abas e no log geral do admin. -->
+  @if (['modelos', 'marcas', 'carros'].includes(aba) || (admin && aba === 'logs')) {
+    <div class="caixa painel-log">
+      <h2>Log de {{ categoriaLog === 'geral' ? 'todas as atividades' : categoriaLog }}</h2>
+      <button type="button" (click)="alternarLog()" [attr.aria-expanded]="mostrarLog" aria-controls="conteudo-log">{{ mostrarLog ? 'Ocultar log' : 'Exibir log' }}</button>
+      @if (mostrarLog) {
+        <div id="conteudo-log">
+          <p>{{ admin ? 'Atividades de todos os usuários, com detalhes.' : 'Suas atividades, com informações resumidas.' }} Horário de Brasília.</p>
+          <p>Os registros começam após a instalação desta atualização. Acessórios e vínculos ficam no log de carros.</p>
+          <div class="acoes-log">
+            <button type="button" (click)="carregarLogs()" [disabled]="carregandoLog">Atualizar log</button>
+            <button type="button" (click)="exportarLog()" [disabled]="carregandoLog || !!erroLog || !registrosLog.length">Salvar CSV</button>
+            <button type="button" (click)="copiarLog()" [disabled]="carregandoLog || !!erroLog || !registrosLog.length">Copiar log</button>
+          </div>
+          @if (carregandoLog) { <p role="status">Carregando log...</p> }
+          @if (erroLog) { <p class="aviso erro" role="alert">{{ erroLog }}</p> }
+          @if (avisoLog) { <p class="aviso ok" role="status">{{ avisoLog }}</p> }
+          @if (textoParaCopiar) {
+            <label>Texto para copiar com Ctrl+C<textarea id="copia-log" readonly [value]="textoParaCopiar"></textarea></label>
+          }
+          @if (!carregandoLog && !erroLog && !registrosLog.length) { <p>Nenhuma atividade registrada neste log.</p> }
+          @if (registrosLog.length) {
+            <p>{{ registrosLog.length }} registro(s). A exportação inclui todos os registros exibidos.</p>
+            <div class="tabela-responsiva">
+              <table>
+                <thead><tr><th>Número</th><th>Data / hora</th><th>Usuário</th><th>Ação</th><th>Descrição</th>@if (admin) { <th>Detalhes</th> }</tr></thead>
+                <tbody>
+                  @for (log of registrosLog; track log.id_log) {
+                    <tr>
+                      <td>{{ log.id_log }}</td><td>{{ log.data_hora }}</td><td>{{ log.usuario }}</td>
+                      <td>{{ log.acao }}</td><td class="resumo-log">{{ log.resumo }}</td>
+                      @if (admin) {
+                        <td>
+                          <details><summary>Ver detalhes</summary>
+                            <p>Categoria: {{ log.categoria }}<br>IP: {{ log.ip }}<br>Navegador: {{ log.navegador }}</p>
+                            <pre>{{ detalhesLog(log) }}</pre>
+                          </details>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    </div>
   }
 
 }

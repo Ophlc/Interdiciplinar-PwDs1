@@ -279,3 +279,13 @@ tr:hover td { background: #e9e9e9; }
 @media (max-width: 760px) {
   .abas { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Mantém as novas telas no mesmo estilo das caixas e tabelas. */
+.abas.abas-admin { grid-template-columns: repeat(3, 1fr); }
+.acoes-log { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.painel-log .resumo-log { white-space: normal; min-width: 180px; }
+.painel-log details { min-width: 180px; max-width: 350px; white-space: normal; overflow-wrap: anywhere; }
+.painel-log summary { cursor: pointer; text-decoration: underline; }
+.painel-log pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow-y: auto; font-size: 12px; }
+.senha-hash { min-width: 160px; max-width: 300px; white-space: normal; overflow-wrap: anywhere; }
+textarea { display: block; width: 100%; min-height: 120px; padding: 8px; border: 1px solid #999; font: 13px monospace; }

@@ -1,24 +1,22 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { App } from './app';
 
+// Confere a tela inicial sem depender do Apache nos testes.
 describe('App', () => {
-  beforeEach(async () => {
+  it('mostra o login quando não existe uma sessão', async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-    })
-      .compileComponents();
-  });
-
-  it('should create the app', () => {
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    }).compileComponents();
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, SiteCarros');
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne((req) => req.params.get('acao') === 'sessao')
+      .flush({ sucesso: true, usuario: null, admin: false });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Entrar');
+    http.verify();
   });
 });

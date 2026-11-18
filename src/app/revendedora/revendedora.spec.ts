@@ -1,39 +1,29 @@
-//Parte de importar as ferramentas do Angular
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-//Componente chama a API PHP
+import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-
-//Testar o componente
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Revendedora } from './revendedora';
 
-//Testes do componente Revendedora
+// A permissão real é conferida pelo PHP; este teste confere as abas da tela.
 describe('Revendedora', () => {
-
-  //Fixture é tipo um "envelope" dele no teste
-  let component: Revendedora;
-  let fixture: ComponentFixture<Revendedora>;
-
-  // Roda antes de cada teste, pra deixar tudo pronto
-  beforeEach(async () => {
-
-    // Monta o ambiente de teste com o componente e o HttpClient de mentirinha
+  it('não mostra as abas de admin para um usuário comum', async () => {
     await TestBed.configureTestingModule({
       imports: [Revendedora],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting()]
     }).compileComponents();
-
-    // Cria o componente e guarda ele pra usar nos testes
-    fixture = TestBed.createComponent(Revendedora);
-    component = fixture.componentInstance;
-
-    // Espera o Angular terminar de carregar tudo
-    await fixture.whenStable();
-  });
-
-  // Teste simples: só vê se o componente foi criado sem resenhar
-  it('should create', () => {
-    expect(component).toBeTruthy();
+    const fixture = TestBed.createComponent(Revendedora);
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne((req) => req.params.get('acao') === 'sessao')
+      .flush({ sucesso: true, usuario: 'aluno', admin: false });
+    for (const acao of ['marcas', 'modelos', 'acessorios', 'carros', 'carros_acessorios']) {
+      http.expectOne((req) => req.params.get('acao') === acao)
+        .flush({ sucesso: true, dados: [] });
+    }
+    fixture.detectChanges();
+    const texto = fixture.nativeElement.textContent;
+    expect(texto).not.toContain('Log geral');
+    expect(texto).not.toContain('Usuários cadastrados');
+    expect(fixture.componentInstance.admin).toBe(false);
+    http.verify();
   });
 });

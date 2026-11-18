@@ -8,7 +8,8 @@ USE bd_revendedoracarros;
 
 CREATE TABLE tb_usuario (
   login VARCHAR(50) NOT NULL,
-  senha VARCHAR(255) NOT NULL,   -- 255 pq a senha fica criptografada
+  perfil ENUM('usuario', 'admin') NOT NULL DEFAULT 'usuario',
+  senha VARCHAR(255) NOT NULL,   -- espaço para o hash da senha
   PRIMARY KEY (login)
 );
 
@@ -37,7 +38,7 @@ CREATE TABLE tb_modelo (
 );
 
 
---Guarda cada vez que a pessoa entrou
+-- Guarda cada vez que a pessoa entrou
 CREATE TABLE tb_log_login (
   id_log INT NOT NULL AUTO_INCREMENT,
   login VARCHAR(50) NOT NULL,
@@ -47,7 +48,7 @@ CREATE TABLE tb_log_login (
 );
 
 
---Parte do formulário
+-- Parte do formulário
 CREATE TABLE tb_trabalheconosco (
   id_candidato INT NOT NULL AUTO_INCREMENT,
   nome VARCHAR(50) NOT NULL,
@@ -55,13 +56,13 @@ CREATE TABLE tb_trabalheconosco (
   celular VARCHAR(11) NOT NULL,          
   cidade VARCHAR(20) NOT NULL,
   estado VARCHAR(2) NOT NULL,          
-  cargo_pretendido VARCHAR(20) NOT NULL,
+  cargo_pretendido VARCHAR(50) NOT NULL,
   link_linkdin VARCHAR(30) NULL,
   PRIMARY KEY (id_candidato)
 );
 
 
---Acessórios que o carro pd ter (um cadastro só, igual as marcas)
+-- Acessórios que o carro pd ter (um cadastro só, igual as marcas)
 CREATE TABLE tb_acessorio (
   id_acessorio INT NOT NULL AUTO_INCREMENT,
   nome VARCHAR(50) NOT NULL,
@@ -72,7 +73,7 @@ CREATE TABLE tb_acessorio (
 );
 
 
---Os carros, cada carro tem um modelo (e o modelo já tem a marca)
+-- Os carros, cada carro tem um modelo (e o modelo já tem a marca)
 CREATE TABLE tb_carro (
   id_carro INT NOT NULL AUTO_INCREMENT,
   placa VARCHAR(10) NOT NULL,
@@ -131,3 +132,26 @@ INSERT INTO tb_acessorio (nome) VALUES
   ('Suporte para celular'),
   ('Direção elétrica'),
   ('Repetidor de seta');
+
+
+-- Sem chave estrangeira: o histórico continua mesmo depois de excluir uma conta.
+CREATE TABLE IF NOT EXISTS tb_log_atividade (
+  id_log BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  usuario VARCHAR(50) NOT NULL,
+  categoria VARCHAR(20) NOT NULL,
+  acao VARCHAR(40) NOT NULL,
+  resumo VARCHAR(255) NOT NULL,
+  detalhes LONGTEXT NOT NULL,
+  ip VARCHAR(45) NOT NULL,
+  navegador VARCHAR(255) NOT NULL,
+  data_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_log_usuario_categoria (usuario, categoria, id_log),
+  INDEX idx_log_categoria (categoria, id_log)
+) ENGINE=InnoDB;
+
+-- Senha inicial do admin: admin123. O banco guarda só o hash.
+INSERT INTO tb_usuario (login, senha, perfil)
+VALUES ('admin', '$2y$10$xoVNy/87i5cg4sBYjtchvedXx6NebcevUTiNWMfdR.6ic5xyC5n4a', 'admin')
+ON DUPLICATE KEY UPDATE
+  senha = IF(perfil = 'usuario', VALUES(senha), senha),
+  perfil = 'admin';

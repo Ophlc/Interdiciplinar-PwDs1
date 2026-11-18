@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { tap } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 
 // Faz os dados chegarem no PHP
@@ -13,10 +14,12 @@ interface ModeloCadastrado {
   id_modelo: number;
   modelo: string;
   marca: string;
+  proprietario: string;
 }
 
 // Login do histórico
 interface Acesso {
+  usuario: string;
   data: string;
   hora: string;
 }
@@ -37,6 +40,7 @@ interface Carro {
   situacao: string;
   modelo: string;
   marca: string;
+  proprietario: string;
 }
 
 // Um acessório que está em um carro
@@ -47,7 +51,43 @@ interface CarroAcessorio {
   acessorio: string;
 }
 
+interface RegistroLog {
+  id_log: number;
+  usuario: string;
+  categoria: string;
+  acao: string;
+  resumo: string;
+  data_hora: string;
+  detalhes?: string;
+  ip?: string;
+  navegador?: string;
+}
+
+interface UsuarioCadastrado {
+  login: string;
+  senha_hash: string;
+  perfil: string;
+}
+
+interface Candidatura {
+  id_candidato: number;
+  nome: string;
+  email: string;
+  celular: string;
+  cidade: string;
+  estado: string;
+  cargo_pretendido: string;
+  link_linkdin: string | null;
+}
+
+interface PedidoExclusao {
+  acao: string;
+  dados: object;
+  descricao: string;
+}
+
 interface Resposta {
+  admin?: boolean;
   sucesso: boolean;
   mensagem?: string;
   usuario?: string | null;
@@ -68,6 +108,23 @@ export class Revendedora implements OnInit {
   tela = 'carregando';
 
   aba = 'modelos';
+  admin = false;
+  usuarios: UsuarioCadastrado[] = [];
+  candidaturas: Candidatura[] = [];
+  exclusaoPendente: PedidoExclusao | null = null;
+  loginExclusao = '';
+  senhaExclusao = '';
+  erroExclusao = '';
+  excluindo = false;
+
+  mostrarLog = false;
+  carregandoLog = false;
+  registrosLog: RegistroLog[] = [];
+  erroLog = '';
+  avisoLog = '';
+  textoParaCopiar = '';
+  private pedidoLog = 0;
+
 
   // Campos dos formulários
   login = '';
@@ -105,11 +162,6 @@ export class Revendedora implements OnInit {
   erro = '';
   cadastrado = false;
 
-  // Pra apagar marca,segundo metodo
-  marcaParaExcluir: Marca | null = null;
-  loginConfirma = '';
-  senhaConfirma = '';
-  erroExcluir = '';
 
   constructor(
     private http: HttpClient,
@@ -122,7 +174,7 @@ export class Revendedora implements OnInit {
     this.get('sessao').subscribe({
       next: (resposta) => {
         if (resposta.usuario) {
-          this.abrirPrincipal(resposta.usuario);
+          this.abrirPrincipal(resposta.usuario, resposta.admin ?? false);
         } else {
           this.irPara('login');
         }
@@ -130,19 +182,22 @@ export class Revendedora implements OnInit {
       error: (erro) => {
         console.error('Erro ao verificar a sessão:', erro);
         this.irPara('login');
-        this.erro = 'Não foi possível conectar ao servidor.';
-        this.atualizar();
+        this.falhaServidor(erro);
       }
     });
   }
 
   // Funções que chamam o PHP
-  private get(acao: string) {
-    return this.http.get<Resposta>(`${API}?acao=${acao}`, { withCredentials: true });
+  private get(acao: string, parametros: Record<string, string> = {}) {
+    return this.http.get<Resposta>(API, { params: { acao, ...parametros }, withCredentials: true });
   }
 
   private post(acao: string, dados: object) {
-    return this.http.post<Resposta>(`${API}?acao=${acao}`, dados, { withCredentials: true });
+    return this.http.post<Resposta>(`${API}?acao=${acao}`, dados, { withCredentials: true }).pipe(
+      tap((resposta) => {
+        if (resposta.sucesso && this.mostrarLog) this.carregarLogs();
+      })
+    );
   }
 
   // Força a atualização da tela
@@ -157,8 +212,13 @@ export class Revendedora implements OnInit {
     if (erro.status === 401) {
       // acaba  sessão
       this.irPara('login');
+      this.erro = 'Sua sessão terminou. Faça login novamente.';
+    } else if (erro.error && typeof erro.error.mensagem === 'string') {
+      this.erro = erro.error.mensagem;
+    } else if (erro.status === 0) {
+      this.erro = 'A API não respondeu. Confira o Apache, o endereço localhost:4200 e a pasta api-revendedora no htdocs.';
     } else {
-      this.erro = 'Não foi possível conectar ao servidor.';
+      this.erro = 'A API retornou uma resposta inválida. Confira o api.php e o log de erros do Apache.';
     }
 
     this.atualizar();
@@ -170,6 +230,20 @@ export class Revendedora implements OnInit {
     }
 
     this.tela = tela;
+    this.fecharLog();
+    this.cancelarExclusao();
+    if (tela !== 'principal') {
+      this.admin = false;
+      this.usuario = '';
+      this.usuarios = [];
+      this.candidaturas = [];
+      this.marcas = [];
+      this.lista = [];
+      this.carros = [];
+      this.acessorios = [];
+      this.vinculos = [];
+      this.historico = [];
+    }
     this.login = '';
     this.senha = '';
     this.modelo = '';
@@ -178,10 +252,6 @@ export class Revendedora implements OnInit {
     this.senhaAtual = '';
     this.novaSenha = '';
     this.confirmacao = '';
-    this.marcaParaExcluir = null;
-    this.loginConfirma = '';
-    this.senhaConfirma = '';
-    this.erroExcluir = '';
     this.novoAcessorio = '';
     this.limparCarro();
     this.limparVinculo();
@@ -210,17 +280,18 @@ export class Revendedora implements OnInit {
   trocarAba(aba: string, evento: Event): void {
     evento.preventDefault();
 
+    if (!this.admin && ['usuarios', 'candidaturas', 'logs'].includes(aba)) return;
+    this.fecharLog();
+    this.cancelarExclusao();
     this.aba = aba;
+    if (aba === 'usuarios') this.carregarUsuarios();
+    if (aba === 'candidaturas') this.carregarCandidaturas();
     this.modelo = '';
     this.idMarca = '';
     this.novaMarca = '';
     this.senhaAtual = '';
     this.novaSenha = '';
     this.confirmacao = '';
-    this.marcaParaExcluir = null;
-    this.loginConfirma = '';
-    this.senhaConfirma = '';
-    this.erroExcluir = '';
     this.novoAcessorio = '';
     this.limparCarro();
     this.limparVinculo();
@@ -257,7 +328,7 @@ export class Revendedora implements OnInit {
     this.post('login', dados).subscribe({
       next: (resposta) => {
         if (resposta.sucesso) {
-          this.abrirPrincipal(resposta.usuario ?? this.login);
+          this.abrirPrincipal(resposta.usuario ?? this.login, resposta.admin ?? false);
         } else {
           this.login = '';
           this.senha = '';
@@ -332,9 +403,10 @@ export class Revendedora implements OnInit {
   }
 
   // Mostra a tela principal e carrega as marcas e os modelos
-  abrirPrincipal(usuario: string): void {
+  abrirPrincipal(usuario: string, admin: boolean): void {
     this.irPara('principal');
     this.usuario = usuario;
+    this.admin = admin;
 
     this.carregarMarcas();
     this.carregarModelos();
@@ -380,90 +452,14 @@ export class Revendedora implements OnInit {
 
   // Apaga a marca e pergunta
   excluirMarca(marca: Marca): void {
-    const certeza = confirm('Certeza que vai apagar a marca ' + marca.nome + '??? Todos os modelos dessa marca e os carros deles vão sumir também.');
-    if (!certeza) {
-      return;
-    }
-
-    // segunda confirmação
-    this.marcaParaExcluir = marca;
-    this.loginConfirma = '';
-    this.senhaConfirma = '';
-    this.erroExcluir = '';
-    this.msg = '';
-    this.erro = '';
-
-    this.atualizar();
+    this.pedirExclusao('excluir_marca', { id_marca: marca.id_marca }, 'a marca ' + marca.nome + ' e seus modelos, carros e vínculos');
   }
 
-  // Fecha a caixa sem apagar
-  cancelarExclusao(): void {
-    this.marcaParaExcluir = null;
-    this.loginConfirma = '';
-    this.senhaConfirma = '';
-    this.erroExcluir = '';
 
-    this.atualizar();
-  }
-
-  // Apaga a marca se o login e a senha estiver certo
-  confirmarExclusaoMarca(): void {
-    const marca = this.marcaParaExcluir;
-    if (!marca) {
-      return;
-    }
-
-    this.erroExcluir = '';
-
-    const dados = { id_marca: marca.id_marca, login: this.loginConfirma, senha: this.senhaConfirma };
-
-    this.post('excluir_marca', dados).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Marca apagada!';
-          this.cancelarExclusao();
-
-          // recarrega tudo, porque os modelos e os carros da marca sumiram também
-          this.carregarMarcas();
-          this.carregarModelos();
-          this.carregarCarros();
-          this.carregarVinculos();
-        } else {
-          this.erroExcluir = resposta.mensagem ?? '';
-          this.senhaConfirma = '';
-        }
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
-  }
 
   // Apaga um modelo do usuário
   excluirModelo(modelo: ModeloCadastrado): void {
-    const certeza = confirm('Apagar o modelo ' + modelo.modelo + '? Os carros desse modelo também vão sumir.');
-    if (!certeza) {
-      return;
-    }
-
-    this.msg = '';
-    this.erro = '';
-
-    this.post('excluir_modelo', { id_modelo: modelo.id_modelo }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Modelo apagado!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        // os carros desse modelo também sumiram
-        this.carregarModelos();
-        this.carregarCarros();
-        this.carregarVinculos();
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
+    this.pedirExclusao('excluir_modelo', { id_modelo: modelo.id_modelo }, 'o modelo ' + modelo.modelo + ' e seus carros e vínculos');
   }
 
   // Troca a senha da pessoa
@@ -582,28 +578,7 @@ export class Revendedora implements OnInit {
 
   // Apaga o acessório (ele sai de todos os carros)
   excluirAcessorio(acessorio: Acessorio): void {
-    const certeza = confirm('Apagar o acessório ' + acessorio.nome + '? Ele também vai sair de todos os carros.');
-    if (!certeza) {
-      return;
-    }
-
-    this.msg = '';
-    this.erro = '';
-
-    this.post('excluir_acessorio', { id_acessorio: acessorio.id_acessorio }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Acessório apagado!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        this.carregarAcessorios();
-        this.carregarVinculos();
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
+    this.pedirExclusao('excluir_acessorio', { id_acessorio: acessorio.id_acessorio }, 'o acessório ' + acessorio.nome + ' e seus vínculos');
   }
 
   // Tabela dos carros da pessoa
@@ -649,28 +624,7 @@ export class Revendedora implements OnInit {
 
   // Apaga o carro (os acessórios dele também saem)
   excluirCarro(carro: Carro): void {
-    const certeza = confirm('Apagar o carro de placa ' + carro.placa + '?');
-    if (!certeza) {
-      return;
-    }
-
-    this.msg = '';
-    this.erro = '';
-
-    this.post('excluir_carro', { id_carro: carro.id_carro }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Carro apagado!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        this.carregarCarros();
-        this.carregarVinculos();
-        this.atualizar();
-      },
-      error: (erro) => this.falhaServidor(erro)
-    });
+    this.pedirExclusao('excluir_carro', { id_carro: carro.id_carro }, 'o carro ' + carro.placa + ' e seus vínculos');
   }
 
   // Tabela com os acessórios de cada carro
@@ -715,27 +669,185 @@ export class Revendedora implements OnInit {
 
   // Tira o acessório do carro
   excluirVinculo(v: CarroAcessorio): void {
-    const certeza = confirm('Tirar ' + v.acessorio + ' do carro ' + v.placa + '?');
-    if (!certeza) {
-      return;
-    }
+    this.pedirExclusao('excluir_vinculo', { id_carro: v.id_carro, id_acessorio: v.id_acessorio }, 'o vínculo entre ' + v.placa + ' e ' + v.acessorio);
+  }
 
-    this.msg = '';
-    this.erro = '';
 
-    this.post('excluir_vinculo', { id_carro: v.id_carro, id_acessorio: v.id_acessorio }).subscribe({
-      next: (resposta) => {
-        if (resposta.sucesso) {
-          this.msg = resposta.mensagem ?? 'Acessório tirado do carro!';
-        } else {
-          this.erro = resposta.mensagem ?? '';
-        }
-
-        this.carregarVinculos();
-        this.atualizar();
-      },
+  carregarUsuarios(): void {
+    this.get('usuarios').subscribe({
+      next: (resposta) => { this.usuarios = resposta.dados ?? []; this.atualizar(); },
       error: (erro) => this.falhaServidor(erro)
     });
+  }
+
+  carregarCandidaturas(): void {
+    this.get('candidaturas').subscribe({
+      next: (resposta) => { this.candidaturas = resposta.dados ?? []; this.atualizar(); },
+      error: (erro) => this.falhaServidor(erro)
+    });
+  }
+
+  pedirExclusao(acao: string, dados: object, descricao: string): void {
+    this.exclusaoPendente = { acao, dados, descricao };
+    this.loginExclusao = '';
+    this.senhaExclusao = '';
+    this.erroExclusao = '';
+    this.msg = '';
+    this.atualizar();
+    document.getElementById('confirmacao-exclusao')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('login-exclusao')?.focus({ preventScroll: true });
+  }
+
+  cancelarExclusao(): void {
+    if (this.excluindo) return;
+    this.exclusaoPendente = null;
+    this.loginExclusao = '';
+    this.senhaExclusao = '';
+    this.erroExclusao = '';
+  }
+
+  confirmarExclusao(): void {
+    if (!this.exclusaoPendente || this.excluindo) return;
+    this.excluindo = true;
+    this.erroExclusao = '';
+    const pedido = this.exclusaoPendente;
+    const dados = { ...pedido.dados, login_confirmacao: this.loginExclusao, senha_confirmacao: this.senhaExclusao };
+    this.post(pedido.acao, dados).subscribe({
+      next: (resposta) => {
+        this.excluindo = false;
+        this.senhaExclusao = '';
+        if (resposta.sucesso) {
+          this.cancelarExclusao();
+          this.msg = resposta.mensagem ?? 'Cadastro apagado!';
+          this.carregarMarcas();
+          this.carregarModelos();
+          this.carregarCarros();
+          this.carregarAcessorios();
+          this.carregarVinculos();
+          if (this.aba === 'usuarios') this.carregarUsuarios();
+          if (this.aba === 'candidaturas') this.carregarCandidaturas();
+        } else {
+          this.erroExclusao = resposta.mensagem ?? 'Não foi possível excluir.';
+        }
+        this.atualizar();
+      },
+      error: (erro) => {
+        this.excluindo = false;
+        this.senhaExclusao = '';
+        this.falhaServidor(erro);
+        this.erroExclusao = this.erro;
+        this.atualizar();
+      }
+    });
+  }
+
+  excluirUsuario(conta: UsuarioCadastrado): void {
+    if (conta.login === this.usuario || conta.perfil === 'admin') return;
+    this.pedirExclusao('excluir_usuario', { usuario: conta.login }, 'a conta ' + conta.login + ' e seus modelos, carros e vínculos');
+  }
+
+  excluirCandidatura(candidatura: Candidatura): void {
+    this.pedirExclusao('excluir_candidatura', { id_candidato: candidatura.id_candidato }, 'a candidatura de ' + candidatura.nome);
+  }
+
+  get categoriaLog(): string {
+    return this.aba === 'logs' ? 'geral' : this.aba;
+  }
+
+  fecharLog(): void {
+    this.pedidoLog++;
+    this.mostrarLog = false;
+    this.carregandoLog = false;
+    this.registrosLog = [];
+    this.erroLog = '';
+    this.avisoLog = '';
+    this.textoParaCopiar = '';
+  }
+
+  alternarLog(): void {
+    if (this.mostrarLog) {
+      this.fecharLog();
+    } else {
+      this.mostrarLog = true;
+      this.carregarLogs();
+    }
+  }
+
+  carregarLogs(): void {
+    const pedido = ++this.pedidoLog;
+    this.carregandoLog = true;
+    this.registrosLog = [];
+    this.erroLog = '';
+    this.avisoLog = '';
+    this.textoParaCopiar = '';
+    this.get('logs', { categoria: this.categoriaLog }).subscribe({
+      next: (resposta) => {
+        if (pedido !== this.pedidoLog) return;
+        this.carregandoLog = false;
+        this.registrosLog = resposta.dados ?? [];
+        this.atualizar();
+      },
+      error: (erro) => {
+        if (pedido !== this.pedidoLog) return;
+        this.carregandoLog = false;
+        if (erro.status === 401) this.falhaServidor(erro);
+        else this.erroLog = erro.error?.mensagem ?? 'Não foi possível carregar o log.';
+        this.atualizar();
+      }
+    });
+  }
+
+  detalhesLog(registro: RegistroLog): string {
+    try { return JSON.stringify(JSON.parse(registro.detalhes ?? '{}'), null, 2); }
+    catch { return registro.detalhes ?? ''; }
+  }
+
+  private conteudoCsv(): string {
+    const cabecalho = ['Número', 'Data e hora (Brasília)', 'Usuário', 'Categoria', 'Ação', 'Descrição'];
+    if (this.admin) cabecalho.push('Detalhes', 'IP', 'Navegador');
+    const linhas: string[][] = [cabecalho];
+    for (const log of this.registrosLog) {
+      const linha = [String(log.id_log), log.data_hora, log.usuario, log.categoria, log.acao, log.resumo];
+      if (this.admin) linha.push(log.detalhes ?? '', log.ip ?? '', log.navegador ?? '');
+      linhas.push(linha);
+    }
+    // Aspas preservam ponto e vírgula e quebras de linha. O apóstrofo evita fórmulas no Excel.
+    return linhas.map((linha) => linha.map((valor) => {
+      const texto = /^[\s]*[=+@-]/.test(valor) ? "'" + valor : valor;
+      return '"' + texto.replace(/"/g, '""') + '"';
+    }).join(';')).join('\r\n');
+  }
+
+  exportarLog(): void {
+    if (this.carregandoLog || this.erroLog || !this.registrosLog.length) return;
+    const agora = new Date();
+    const partes = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(agora);
+    const horario = partes.replace(' ', '_').replace(/:/g, '-') + '-' + String(agora.getMilliseconds()).padStart(3, '0');
+    const usuario = this.usuario.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const arquivo = new Blob(['\uFEFF' + this.conteudoCsv()], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(arquivo);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `log_${this.categoriaLog}_${usuario}_${horario}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.avisoLog = 'Arquivo CSV exportado. Horário de Brasília.';
+  }
+
+  async copiarLog(): Promise<void> {
+    if (this.carregandoLog || this.erroLog || !this.registrosLog.length) return;
+    const texto = this.conteudoCsv();
+    try {
+      await navigator.clipboard.writeText(texto);
+      this.avisoLog = 'Log copiado para a área de transferência.';
+      this.textoParaCopiar = '';
+    } catch {
+      this.textoParaCopiar = texto;
+      this.avisoLog = 'O navegador bloqueou a cópia. O texto está selecionado abaixo: pressione Ctrl+C.';
+      this.atualizar();
+      (document.getElementById('copia-log') as HTMLTextAreaElement | null)?.select();
+    }
+    this.atualizar();
   }
 
 }
