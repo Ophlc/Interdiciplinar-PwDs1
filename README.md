@@ -1,180 +1,199 @@
-# Interdisciplinar Angular versão 7 — Revendedora de Carros
+# Interdisciplinar Angular versão 8 — Revendedora de Carros
 
 ## Sobre o projeto
 
-Este projeto foi desenvolvido como parte de uma atividade interdisciplinar das disciplinas de Banco de Dados, Programação Web e Desenvolvimento de Sistemas, com a proposta de criar um sistema para uma revendedora de carros.
+Este projeto foi desenvolvido como parte de uma atividade interdisciplinar das disciplinas de Banco de Dados, Programação Web e Desenvolvimento de Sistemas, com a proposta de criar um sistema interno para uma revendedora de carros.
 
-A ideia é simular um sistema interno utilizado pelos funcionários, permitindo cadastrar e consultar marcas, modelos, veículos e acessórios.
+A aplicação permite cadastrar marcas, modelos, veículos e acessórios, consultar os carros disponíveis e vendidos e acompanhar as atividades realizadas pelos usuários.
 
-Nesta versão, também temos o perfil de administrador, os logs de atividades e a confirmação com login e senha antes das exclusões.
+Na versão 8, a navegação passou a utilizar uma barra lateral. Também foram adicionadas a edição de veículos, a separação dos vendidos, a caixa única Ano/Modelo e a organização dos acessórios com seus identificadores.
 
-O sistema utiliza Angular no Front-End, PHP no Back-End e MySQL para armazenar os dados.
+O sistema utiliza Angular no Front-End, PHP no Back-End e MySQL para armazenar os dados. O funcionamento é único, sem necessidade de cadastrar lojas ou vincular funcionários.
 
 ## Tecnologias utilizadas
 
 | Tecnologia | Utilização |
 |---|---|
-| Angular | Componentes, formulários e comunicação com a API. |
-| TypeScript | Programação das funcionalidades do Front-End. |
-| HTML5 e CSS3 | Estrutura e aparência das telas. |
-| PHP 8 ou superior | API, sessões, validações e permissões. |
-| PDO | Comunicação do PHP com o banco de dados. |
-| MySQL 8 | Armazenamento dos cadastros e logs. |
+| Angular e TypeScript | Telas, formulários e comunicação com a API. |
+| HTML5 e CSS3 | Estrutura das páginas, aparência e adaptação para celular. |
+| PHP 8 ou superior | API, autenticação, sessões, validações e permissões. |
+| PDO | Comunicação com o banco por consultas preparadas. |
+| MySQL 8 | Armazenamento dos cadastros e históricos. |
 | XAMPP | Execução do Apache e do PHP no ambiente local. |
-| MySQL Workbench | Criação, atualização e consulta do banco de dados. |
+| MySQL Workbench | Criação, consulta e administração do banco. |
 
 ## Funcionalidades
 
-- **Cadastro de usuários:** criação de contas para acessar o sistema.
-- **Autenticação:** acesso com login e senha.
-- **Marcas:** cadastro, listagem e exclusão de marcas.
-- **Modelos:** cadastro, listagem e exclusão de modelos associados a uma marca.
-- **Acessórios:** cadastro, listagem e exclusão de acessórios.
-- **Carros:** cadastro, listagem e exclusão de veículos, com placa, chassi, modelo, cor, ano, valor, quilometragem e situação.
-- **Carros e acessórios:** associação de acessórios aos veículos e exclusão dos vínculos.
-- **Alteração de senha:** troca da senha mediante confirmação da senha atual.
-- **Histórico de acessos:** consulta às datas e aos horários dos logins.
-- **Trabalhe conosco:** formulário público para envio de candidaturas.
-- **Administração de usuários:** consulta aos usuários cadastrados, aos perfis e aos hashes das senhas, além da exclusão de contas comuns.
-- **Administração de candidaturas:** consulta e exclusão das inscrições recebidas.
-- **Logs de atividades:** consulta, exportação em CSV e cópia para a área de transferência.
+- Cadastro de usuários e autenticação com login e senha.
+- Cadastro, consulta e exclusão de marcas, modelos e acessórios.
+- Cadastro e edição de veículos, com placa, chassi, modelo, ano/modelo, cor, valor e quilometragem.
+- Consulta dos veículos disponíveis e dos veículos vendidos em telas separadas.
+- Visualização dos dados completos do veículo e dos acessórios associados.
+- Associação e remoção individual de acessórios dos veículos.
+- Pesquisas por ID, placa, marca/modelo e outras informações adequadas a cada cadastro.
+- Confirmação de exclusões com login e senha da conta logada.
+- Alteração de senha e histórico de acessos.
+- Formulário público Trabalhe conosco e consulta administrativa das candidaturas.
+- Administração de usuários, com consulta aos perfis e hashes das senhas.
+- Logs de atividades com exportação CSV e cópia para a área de transferência.
 
-## Perfis de acesso
+## Navegação
+
+A barra lateral fica no canto esquerdo e acompanha a altura completa da página, incluindo a área ao lado do rodapé. As categorias podem ser abertas e recolhidas. No celular, o botão **Menu** controla a exibição das opções.
+
+### Carros
+
+As opções aparecem nesta ordem:
+
+1. **Cadastrar veículos.**
+2. **Veículo/Acessórios.**
+3. **Veículos cadastrados.**
+4. **Veículos vendidos.**
+
+### Cadastros
+
+- Marcas.
+- Modelos.
+- Acessórios.
+
+### Administração — somente para o admin
+
+- Usuários.
+- Senha e histórico.
+- Candidaturas.
+- Logs gerais.
+
+Para o usuário comum, **Senha e histórico** continua dentro de **Minha conta**. Para o admin, essa mesma tela fica em **Administração**, logo abaixo de **Usuários**.
+
+## Cadastro e edição de veículos
+
+Todo veículo novo é cadastrado como **Disponível**. O campo **Situação** aparece somente na edição.
+
+O formulário possui uma única caixa **Ano/Modelo**, ao lado do campo Modelo, preenchida no formato:
+
+```text
+2026/2027
+```
+
+O primeiro ano indica a fabricação e o segundo indica o ano-modelo. Embora sejam digitados na mesma caixa, os valores continuam armazenados separadamente no banco.
+
+Cor, valor e quilometragem ficam na mesma linha quando houver espaço na tela.
+
+A placa e o chassi são obrigatórios e únicos. O sistema também valida os anos, o valor positivo e a quilometragem inteira, que pode ser zero.
+
+### Veículos cadastrados e vendidos
+
+**Veículos cadastrados** mostra somente os disponíveis. A listagem apresenta o ID, a marca/modelo e os botões com ícones:
+
+- **Olho:** abre os detalhes completos, incluindo os acessórios.
+- **Lápis:** abre a edição quando o usuário possui permissão.
+
+Ao editar um veículo disponível e salvar a situação como **Vendido**, ele sai da lista de cadastrados e aparece em **Veículos vendidos**. O sistema abre a tela de vendidos após confirmar a alteração.
+
+Veículos vendidos permanecem disponíveis para consulta histórica. Não podem ser vendidos novamente, editados, excluídos ou ter seus acessórios alterados. Essa proteção também se aplica às exclusões indiretas de outros cadastros.
+
+## Veículo/Acessórios
+
+O usuário seleciona o veículo e escolhe os acessórios do catálogo para associar a ele, quando possui permissão.
+
+Na tabela **Veículos e seus acessórios**, cada carro aparece uma única vez. Dentro da linha do veículo, os acessórios são organizados em linhas próprias, com duas colunas: **ID** e **Acessório**.
+
+Exemplo:
+
+| Veículo | ID do acessório | Acessório |
+|---|---|---|
+| Toyota Corolla | 1 | Ar condicionado |
+| Mesmo veículo | 2 | Roda de liga leve |
+
+Para remover um item, selecione o veículo e utilize **Remover somente este acessório** no item desejado. A operação exige confirmação com login e senha e preserva as outras associações.
+
+Remover a associação de um carro não exclui o acessório do catálogo. A tela também permite consultar os acessórios dos veículos vendidos, mantendo seu histórico protegido.
+
+## Perfis e permissões
 
 ### Usuário comum
 
-O usuário comum consulta e gerencia os modelos da própria conta e os carros associados a esses modelos.
+Todos os usuários logados podem consultar os veículos na mesma listagem. A edição, exclusão e alteração de acessórios de um veículo disponível ficam restritas ao responsável pelo cadastro ou ao administrador.
 
-Marcas e acessórios são cadastros compartilhados.
+Os usuários comuns também cadastram marcas, modelos e acessórios. Exclusões de marcas e modelos não podem apagar indiretamente veículos de outros autores sem intervenção do admin, nem atingir veículos vendidos.
 
-Ele também pode consultar suas próprias atividades nos logs de modelos, marcas e carros, com informações resumidas.
-
-As abas de usuários, candidaturas e log geral ficam disponíveis somente para o administrador.
+Nos logs, cada usuário comum consulta suas próprias atividades autorizadas.
 
 ### Administrador
 
-O administrador consulta e gerencia os modelos, carros e vínculos de todos os usuários.
+O admin possui acesso geral aos cadastros, usuários, candidaturas e logs. Na tabela de usuários, as senhas são exibidas somente como **hashes**, sem revelar as senhas originais.
 
-Ele também acessa as abas **Usuários**, **Candidaturas** e **Log geral**.
-
-Na listagem de usuários, as senhas aparecem como **hashes**, gerados pelo PHP. O sistema não exibe as senhas originais.
-
-A conta inicial de administrador é criada pelo banco:
+A conta inicial é criada pelo `banco.sql`:
 
 | Campo | Valor inicial |
 |---|---|
 | Login | `admin` |
 | Senha | `admin123` |
 
-A senha pode ser alterada pela aba **Alterar senha**.
+A senha pode ser alterada em **Administração → Senha e histórico**. O cadastro público cria apenas usuários comuns. A própria conta do administrador não pode ser excluída.
 
-O cadastro público cria apenas usuários comuns. A conta do administrador não pode ser excluída pelo sistema.
+As permissões são verificadas pela API PHP, além da apresentação dos botões na interface.
 
-## Confirmação de exclusão
+## Exclusões e preservação dos dados
 
-Tanto o administrador quanto os usuários comuns precisam informar **o login e a senha da conta que está logada** antes de excluir:
+Todas as exclusões exigem **o login e a senha da conta que está logada**. Credenciais de outra conta não confirmam a operação.
 
-- Modelos.
-- Marcas.
-- Acessórios.
-- Carros.
-- Vínculos entre carros e acessórios.
+Algumas exclusões removem registros dependentes, como os carros de um modelo ou os vínculos de um acessório. A operação é bloqueada quando afetaria um veículo vendido ou dados de outro autor sem autorização.
 
-O administrador também confirma suas credenciais para excluir usuários e candidaturas.
-
-A validação acontece no PHP, junto com a verificação das permissões. As credenciais de outra conta não confirmam a operação.
-
-### Exclusões em cascata
-
-Algumas exclusões afetam outros registros:
-
-- Excluir uma marca apaga os modelos dessa marca, seus carros e os vínculos, inclusive de outros usuários.
-- Excluir um modelo apaga seus carros e os vínculos desses carros.
-- Excluir um carro remove seus vínculos com acessórios.
-- Excluir um acessório remove os vínculos dele com os carros.
-- Excluir um usuário apaga seus modelos, carros e vínculos; os logs de atividades são preservados.
+Os logs de atividades são preservados mesmo quando um cadastro é excluído. O banco também possui restrições e gatilhos para proteger os veículos vendidos e suas associações.
 
 ## Logs de atividades
 
-O sistema possui quatro consultas de logs:
+| Log | Conteúdo |
+|---|---|
+| Modelos | Atividades relacionadas aos modelos. |
+| Marcas | Atividades relacionadas às marcas. |
+| Carros | Atividades de veículos, acessórios e associações. |
+| Geral | Conjunto das atividades, disponível somente para o admin. |
 
-| Log | Local | Acesso |
-|---|---|---|
-| Modelos | Aba Modelos | Usuário comum: próprias ações; admin: ações de todos. |
-| Marcas | Aba Marcas | Usuário comum: próprias ações; admin: ações de todos. |
-| Carros | Aba Carros, incluindo acessórios e vínculos | Usuário comum: próprias ações; admin: ações de todos. |
-| Geral | Aba Log geral | Somente o administrador. |
+Os painéis possuem opções para **exibir**, **ocultar**, **atualizar**, **salvar CSV** e **copiar** o log.
 
-O log geral reúne as atividades das outras categorias e também eventos de contas, entradas, saídas, candidaturas e tentativas de login recusadas.
+O usuário comum recebe informações resumidas das próprias ações. O admin também consulta detalhes das operações em campos legíveis, sem JSON bruto, SQL, credenciais ou estrutura interna do banco.
 
-Os painéis começam ocultos e possuem os botões:
+Senhas digitadas e hashes não são copiados para os logs. Os hashes ficam somente na tabela administrativa de usuários.
 
-- **Exibir log.**
-- **Ocultar log.**
-- **Atualizar log.**
-- **Salvar CSV.**
-- **Copiar log.**
+### Exportação e área de transferência
 
-O usuário comum recebe informações resumidas das próprias ações.
+A exportação respeita as permissões da conta e inclui os registros carregados no painel. O CSV utiliza ponto e vírgula e UTF-8 com BOM.
 
-O administrador também consulta detalhes das operações, registros removidos por exclusões em cascata, IP e navegador.
-
-Senhas digitadas e hashes não são armazenados nos logs de atividades.
-
-### Exportação e cópia
-
-A exportação respeita as permissões da conta e inclui todos os registros carregados naquele painel.
-
-O nome do arquivo identifica o tipo de log, quem exportou, a data e o horário de Brasília:
+O nome identifica a categoria, o usuário, a data e o horário de Brasília:
 
 ```text
-log_carros_admin_2026-11-18_14-30-05-123.csv
+log_carros_admin_2026-11-19_15-30-05-123.csv
 ```
 
-O CSV utiliza ponto e vírgula e codificação UTF-8 com BOM.
+Se o navegador bloquear a cópia automática, o sistema apresenta o texto selecionado para copiar com **Ctrl+C**.
 
-Se o navegador bloquear a cópia automática, o sistema mostra o texto selecionado para copiar com **Ctrl+C**.
-
-Os logs de atividades começam a ser registrados após a instalação da versão que adicionou essa função. Eles não reconstroem operações antigas que não foram gravadas.
+Os logs começam a registrar os eventos a partir da instalação da funcionalidade. Operações antigas que não foram gravadas não são reconstruídas.
 
 ## Banco de dados
 
-O banco se chama `bd_revendedoracarros` e possui as seguintes tabelas:
+Nome do banco: **`bd_revendedoracarros`**.
 
 | Tabela | Finalidade |
 |---|---|
-| `tb_usuario` | Contas, hashes das senhas e perfis de acesso. |
+| `tb_usuario` | Contas, perfis e hashes das senhas. |
 | `tb_marca` | Marcas dos veículos. |
-| `tb_modelo` | Modelos associados às marcas e aos usuários. |
-| `tb_carro` | Dados dos veículos. |
-| `tb_acessorio` | Acessórios disponíveis. |
-| `tb_carro_acessorio` | Relacionamento entre carros e acessórios. |
-| `tb_log_login` | Histórico de logins. |
-| `tb_log_atividade` | Registro das atividades do sistema. |
-| `tb_trabalheconosco` | Candidaturas enviadas pelo formulário público. |
+| `tb_modelo` | Modelos associados às marcas e ao usuário que cadastrou. |
+| `tb_carro` | Dados dos veículos, responsável, anos e situação. |
+| `tb_acessorio` | Catálogo de acessórios. |
+| `tb_carro_acessorio` | Associações entre carros e acessórios. |
+| `tb_log_login` | Histórico de acessos. |
+| `tb_log_atividade` | Registro das atividades. |
+| `tb_trabalheconosco` | Candidaturas do formulário público. |
 
-Um modelo pertence a uma marca, e um carro pertence a um modelo.
-
-A relação entre carros e acessórios é de muitos para muitos, feita pela tabela `tb_carro_acessorio`.
-
-Placa e chassi são obrigatórios e únicos. O sistema também valida ano, valor, quilometragem e os campos dos formulários.
-
-A quilometragem aceita zero, e o valor do veículo deve ser maior que zero.
+Um modelo pertence a uma marca, e um carro possui um modelo. A relação entre carros e acessórios é de muitos para muitos, representada por `tb_carro_acessorio`.
 
 ## Como executar o projeto
 
 ### 1. Preparar o ambiente
 
-Tenha instalado:
-
-- Node.js e npm compatíveis com a versão do Angular utilizada.
-- Angular CLI.
-- XAMPP com PHP 8 ou superior e as extensões `pdo_mysql` e `mbstring` habilitadas.
-- MySQL Server 8.
-- MySQL Workbench.
-- Um editor de código, como o Visual Studio Code.
-
-O MySQL Workbench é utilizado para administrar o banco. O MySQL Server precisa estar em execução para a aplicação funcionar.
+Instale Node.js/npm e Angular CLI compatíveis entre si, XAMPP com PHP 8 ou superior e as extensões `pdo_mysql` e `mbstring`, MySQL Server 8 e MySQL Workbench.
 
 Para instalar e conferir o Angular CLI:
 
@@ -183,96 +202,69 @@ npm install -g @angular/cli
 ng version
 ```
 
-### 2. Criar o projeto Angular
+### 2. Configurar o Angular
 
-Este repositório fornece a pasta `src` para copiar para um projeto Angular.
+O projeto disponibiliza a pasta `src` para copiar para uma aplicação Angular.
 
-Se você ainda não possui o projeto criado, execute:
+Se ainda não possui essa aplicação criada:
 
 ```bash
 ng new revendedora-carros
 cd revendedora-carros
 ```
 
-Selecione **CSS** como formato de estilos e **No** para SSR/SSG.
+Selecione **CSS** e desative **SSR/SSG**. Depois substitua o `src` gerado pelo `src` deste projeto. Se a aplicação já existe, pare o servidor antes de substituir os arquivos.
 
-Depois, substitua a pasta `src` criada pelo Angular pela pasta `src` deste repositório.
+### 3. Criar o banco
 
-Se já possui o projeto Angular configurado, basta substituir a pasta `src` com o servidor parado.
+Em uma instalação nova, abra o MySQL Workbench e execute **somente o `banco.sql` desta versão**. Ele já contém a estrutura completa.
 
-### 3. Configurar o banco
+**Atenção:** `banco.sql` apaga o banco existente e recria as tabelas. Faça backup antes de utilizá-lo caso existam dados que precisam ser mantidos.
 
-Abra o MySQL Workbench, conecte ao seu MySQL Server e execute o arquivo SQL adequado, conforme a tabela acima.
+Não execute esse arquivo apenas para reiniciar o sistema ou aplicar ajustes de menu. Para atualizar bancos de versões antigas, utilize uma migração compatível com sua estrutura; o pacote atual não inclui um script incremental separado.
 
-Em uma instalação nova, execute somente `banco.sql`.
+### 4. Configurar a API
 
-### 4. Configurar a API PHP
-
-Copie a pasta `api-revendedora` para:
+Copie `api-revendedora` para:
 
 ```text
 C:\xampp\htdocs\api-revendedora
 ```
 
-No arquivo `conexao.php`, ajuste host, porta, nome do banco, usuário e senha de acordo com a máquina utilizada.
+Ajuste host, porta, banco, usuário e senha no `conexao.php` de acordo com a máquina:
 
-Neste projeto, as portas usadas são:
-
-| Ambiente | Porta do MySQL |
+| Ambiente utilizado no projeto | Porta do MySQL |
 |---|---|
 | Computador de casa | `3306` |
 | Máquinas da Etec | `3307` |
 
-Essas portas são do MySQL, não do Angular.
+Essas portas são do MySQL. O Angular utiliza a porta 4200.
 
-Mantenha suas credenciais locais no `conexao.php` e não publique senhas reais do banco no GitHub.
+Mantenha suas credenciais locais e não publique senhas reais do banco no GitHub. Inicie o Apache e o serviço MySQL utilizado pela máquina. Se o MySQL Server é separado do XAMPP, não é necessário iniciar também o MySQL do XAMPP.
 
-Inicie o Apache pelo XAMPP.
-
-Se estiver utilizando o MySQL Server instalado separadamente, mantenha esse serviço ligado. Não é necessário iniciar também o MySQL do XAMPP.
-
-A API é acessada por:
+Endereço da API:
 
 ```text
 http://localhost/api-revendedora/api.php
 ```
 
-As ações são informadas pelo parâmetro `acao`, por exemplo:
+Exemplo de consulta da sessão:
 
 ```text
 http://localhost/api-revendedora/api.php?acao=sessao
 ```
 
-### 5. Iniciar o Front-End
+### 5. Iniciar a aplicação
 
-No terminal, dentro do projeto Angular, execute:
+Dentro do projeto Angular:
 
 ```bash
 ng serve -o
 ```
 
-Acesse:
+Abra **http://localhost:4200**. Esse é o endereço liberado pelo CORS para a comunicação com credenciais da sessão. Usar `127.0.0.1` ou outra porta pode impedir a autenticação.
 
-```text
-http://localhost:4200
-```
-
-A API libera a comunicação com `http://localhost:4200`, incluindo os cookies da sessão.
-
-Utilize esse endereço: abrir como `127.0.0.1` ou em outra porta pode impedir a autenticação.
-
-Se a porta 4200 estiver ocupada por outra execução do Angular, encerre a execução antiga e inicie novamente.
-
-## Como atualizar uma instalação existente
-
-1. Faça uma cópia do projeto e um backup do banco.
-2. Se o banco ainda não possui os perfis e logs, execute `atualizar_banco.sql`.
-3. Substitua o arquivo `api.php` em `C:\xampp\htdocs\api-revendedora`.
-4. Mantenha o seu `conexao.php`, com as configurações da máquina.
-5. Pare o Angular e substitua a pasta `src`.
-6. Execute `ng serve -o` novamente.
-
-Se a instalação já possui admin e logs e a atualização é apenas a confirmação de exclusão para usuários comuns, não é necessário executar SQL novamente.
+Parar e iniciar Angular, Apache ou MySQL não exige executar SQL novamente. Os dados continuam salvos.
 
 ## Estrutura dos principais arquivos
 
@@ -296,34 +288,16 @@ Se a instalação já possui admin e logs e a atualização é apenas a confirma
 │   ├── main.ts
 │   └── styles.css
 ├── banco.sql
-├── atualizar_banco.sql
-├── LEIA PRIMEIRO - Atualizacao.txt
 ├── Passo a Passo.txt
 └── README.md
 ```
 
-O componente `Revendedora` organiza as telas e os formulários.
+O componente `Revendedora` organiza as telas e formulários. A API recebe as requisições, valida os dados e permissões e retorna JSON. O `conexao.php` configura o acesso ao MySQL.
 
-O `api.php` recebe as requisições, valida os dados e as permissões, realiza as operações no banco e retorna JSON.
-
-O `conexao.php` contém a configuração de acesso ao MySQL.
-
-A autenticação utiliza sessões PHP. As senhas são armazenadas com `password_hash` e verificadas com `password_verify`.
-
-## Novidades da versão 7
-
-- Perfil de administrador com consulta aos dados de todos os usuários.
-- Gerenciamento de usuários e candidaturas pelo administrador.
-- Proteção contra exclusão da conta do administrador.
-- Confirmação com login e senha nas exclusões de usuários comuns e do administrador.
-- Logs de modelos, marcas, carros e atividades gerais.
-- Exportação dos logs em CSV e cópia para a área de transferência.
-- Correção do tamanho do campo de cargo do formulário Trabalhe conosco.
-- Mensagens que diferenciam falhas de comunicação e erros retornados pela API.
-- Atualização do banco sem apagar os cadastros existentes.
+A autenticação usa sessões PHP. As senhas são armazenadas com `password_hash` e verificadas com `password_verify`.
 
 ---
 
 **Desenvolvido por System of &lt;Devs&gt;**
 
-Projeto Interdisciplinar — Angular, versão 7.
+Projeto Interdisciplinar — Angular, versão 8.
