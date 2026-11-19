@@ -15,7 +15,11 @@ $pdo = null;
 
 // Fecha a transação junto com a resposta, para não salvar uma ação sem seu log.
 function responder($sucesso, $mensagem = '', $dados = null, $status = 200, $extras = []) {
-    global $pdo;
+    global $pdo, $admin;
+    if (!$sucesso && !empty($admin)) {
+        $nomes=['login'=>'Entrada no sistema','carro'=>'Cadastro de veículo','editar_carro'=>'Edição de veículo','modelo'=>'Cadastro de modelo'];
+        $extras['operacao']=$nomes[$_GET['acao'] ?? ''] ?? 'Gerenciamento de cadastros';
+    }
     if ($pdo && $pdo->inTransaction()) {
         if ($sucesso) {
             $pdo->commit();
@@ -24,7 +28,7 @@ function responder($sucesso, $mensagem = '', $dados = null, $status = 200, $extr
         }
     }
     http_response_code($status);
-    echo json_encode(array_merge(['sucesso' => $sucesso, 'mensagem' => $mensagem, 'dados' => $dados], $extras), JSON_UNESCAPED_UNICODE);
+    echo json_encode(array_merge(['sucesso' => $sucesso, 'mensagem' => $mensagem, 'dados' => $dados, 'codigo' => $sucesso ? null : 'REV-' . strtoupper($_GET['acao'] ?? 'API') . '-' . ($status === 200 ? 'VALIDACAO' : $status)], $extras), JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -46,19 +50,141 @@ function registrarLog($categoria, $acao, $resumo, $detalhes = [], $usuario = nul
     ]);
 }
 
-// Guarda também o que será apagado pela cascata.
-function dependencias($tipo, $id) {
-    $filtros = [
-        'marca' => ['m.id_marca = ?', [$id]],
-        'modelo' => ['m.id_modelo = ?', [$id]],
-        'carro' => ['c.id_carro = ?', [$id]],
-        'usuario' => ['m.login = ?', [$id]]
-    ];
-    [$filtro, $parametros] = $filtros[$tipo];
-    $modelos = $tipo === 'carro' ? [] : consultar("SELECT m.* FROM tb_modelo m WHERE $filtro", $parametros);
-    $carros = consultar("SELECT c.*, m.login AS proprietario FROM tb_carro c JOIN tb_modelo m ON m.id_modelo = c.id_modelo WHERE $filtro", $parametros);
-    $vinculos = consultar("SELECT ca.*, c.placa, a.nome AS acessorio FROM tb_carro_acessorio ca JOIN tb_carro c ON c.id_carro = ca.id_carro JOIN tb_modelo m ON m.id_modelo = c.id_modelo JOIN tb_acessorio a ON a.id_acessorio = ca.id_acessorio WHERE $filtro", $parametros);
-    return ['modelos' => $modelos, 'carros' => $carros, 'vinculos' => $vinculos];
+function gravar($sql, $parametros = []) {
+ global $pdo;
+ $st = $pdo->prepare($sql); $st->execute($parametros);
+}
+function carroAutorizado($id) {
+ global $admin, $conta;
+ $carro = consultar('SELECT * FROM tb_carro WHERE id_carro = ? FOR UPDATE', [$id])[0] ?? null;
+ if (!$carro || (!$admin && $carro['responsavel'] !== $conta['login'])) responder(false, 'Veículo não encontrado ou sem acesso.', null, 403);
+ return $carro;
+}
+function protegerVendidos($filtro, $parametros) {
+ if (consultar("SELECT c.id_carro FROM tb_carro c JOIN tb_modelo m ON m.id_modelo=c.id_modelo WHERE c.situacao='V' AND ($filtro) FOR UPDATE", $parametros)) responder(false, 'Esta operação afetaria um veículo vendido. O histórico deve ser preservado.', null, 409);
+}
+function executarCadastros($acao, $dados) {
+ global $pdo, $admin, $conta;
+ if ($acao === 'marcas' || $acao === 'acessorios') {
+  $marca=$acao==='marcas';$tabela=$marca?'tb_marca':'tb_acessorio';$coluna=$marca?'id_marca':'id_acessorio';
+  $itens=consultar("SELECT * FROM $tabela ORDER BY nome");
+  responder(true,'',$itens);
+ }
+ if ($acao==='modelos') {
+  $itens=consultar('SELECT m.id_modelo,m.nome AS modelo,m.id_marca,m.login,ma.nome AS marca,m.login AS proprietario FROM tb_modelo m JOIN tb_marca ma ON ma.id_marca=m.id_marca ORDER BY m.nome');
+  responder(true,'',$itens);
+ }
+ if ($acao==='modelo' || $acao==='editar_modelo') {
+  $id=$dados['id_modelo'] ?? null;
+  $modelo=trim($dados['modelo'] ?? '');$marca=$dados['id_marca'] ?? '';
+  if (!$modelo || mb_strlen($modelo)>50 || !consultar('SELECT id_marca FROM tb_marca WHERE id_marca=?',[$marca])) responder(false,'Informe o modelo e uma marca válida.');
+  if ($id) {
+   $antigo=consultar('SELECT * FROM tb_modelo WHERE id_modelo=? FOR UPDATE',[$id])[0] ?? null;
+   if(!$antigo || (!$admin && $antigo['login']!==$conta['login'])) responder(false,'Modelo não encontrado ou sem permissão.',null,403);
+   protegerVendidos('m.id_modelo=?',[$id]);
+  }
+  if(consultar('SELECT id_modelo FROM tb_modelo WHERE nome=? AND id_marca=? AND login=? AND id_modelo<>?',[$modelo,$marca,$conta['login'],$id ?? 0])) responder(false,'Esse modelo já foi cadastrado por você nesta marca.');
+  if($id) gravar('UPDATE tb_modelo SET nome=?,id_marca=? WHERE id_modelo=?',[$modelo,$marca,$id]);
+  else gravar('INSERT INTO tb_modelo (nome,id_marca,login) VALUES (?,?,?)',[$modelo,$marca,$conta['login']]);
+  registrarLog('modelos',$acao,'Modelo salvo: '.$modelo,['Modelo'=>$modelo]);responder(true,'Modelo salvo!');
+ }
+ if ($acao==='carros' || $acao==='carros_acessorios') {
+  $itens=consultar('SELECT c.id_carro,c.placa,c.chassi,c.cor,c.ano,c.ano_modelo,c.valor,c.quilometragem,c.situacao,c.id_modelo,c.responsavel,c.vendido_em,m.nome AS modelo,ma.nome AS marca,c.responsavel AS proprietario FROM tb_carro c JOIN tb_modelo m ON m.id_modelo=c.id_modelo JOIN tb_marca ma ON ma.id_marca=m.id_marca ORDER BY c.id_carro DESC');
+  $itens=array_values(array_filter($itens,function($c) use($admin) {
+   $q=mb_strtolower(trim($_GET['busca'] ?? ''));return !$q || str_contains(mb_strtolower($c['id_carro'].' '.$c['placa'].' '.$c['marca'].' '.$c['modelo']),$q);
+  }));
+  foreach($itens as &$c) { $c['pode_editar']=($admin || $c['responsavel']===$conta['login']) && $c['situacao']==='D'; $c['ano_modelo_texto']=$c['ano'].'/'.($c['ano_modelo'] ?? 'Não informado'); $c['acessorios']=consultar('SELECT a.id_acessorio,a.nome FROM tb_carro_acessorio ca JOIN tb_acessorio a ON a.id_acessorio=ca.id_acessorio WHERE ca.id_carro=? ORDER BY a.nome',[$c['id_carro']]); $c['valor_numerico']=$c['valor'];$c['valor']=number_format($c['valor'],2,',','.'); }
+  responder(true,'',$itens);
+ }
+ if ($acao==='carro' || $acao==='editar_carro') {
+  $id=$dados['id_carro'] ?? null;if($acao==='editar_carro' && !$id) responder(false,'Selecione um veículo para editar.');$anterior=$id ? carroAutorizado($id) : null;
+  if ($anterior && $anterior['situacao']==='V') responder(false,'Veículo vendido é somente leitura e não pode ser vendido novamente.',null,409);
+
+  $modelo=consultar('SELECT * FROM tb_modelo WHERE id_modelo=?',[$dados['id_modelo'] ?? ''])[0] ?? null;
+  if (!$modelo) responder(false,'Escolha um modelo válido.');
+  $placa=strtoupper(trim($dados['placa'] ?? ''));$chassi=strtoupper(trim($dados['chassi'] ?? ''));$cor=trim($dados['cor'] ?? '');
+  if(!preg_match('/^([0-9]{4})\/([0-9]{4})$/',trim($dados['ano_modelo_texto'] ?? ''),$anos)) responder(false,'Informe Ano/Modelo no formato 2026/2027.');
+  $ano=$anos[1];$anoModelo=$anos[2];$valor=str_replace(',','.',(string)($dados['valor'] ?? ''));$km=(string)($dados['quilometragem'] ?? '');
+  $situacao=$id ? ($dados['situacao'] ?? 'D') : 'D';
+  if (!preg_match('/^[A-Z0-9]{7}$/',$placa) || !preg_match('/^[A-Z0-9]{5,30}$/',$chassi)) responder(false,'Confira a placa (7 caracteres) e o chassi (5 a 30).');
+  if (mb_strlen($cor)<2 || mb_strlen($cor)>30 || !preg_match('/^[\p{L} ]+$/u',$cor)) responder(false,'Informe a cor com 2 a 30 letras.');
+  foreach([$ano,$anoModelo] as $a) if (!preg_match('/^[0-9]{4}$/',$a) || $a<1900 || $a>date('Y')+1) responder(false,'Os anos devem ter quatro números, entre 1900 e o ano que vem.');
+  if (!preg_match('/^[0-9]+(\.[0-9]{1,2})?$/',$valor) || $valor<=0 || $valor>99999999 || !preg_match('/^[0-9]{1,7}$/',$km)) responder(false,'Informe valor positivo e quilometragem inteira de 0 a 9999999.');
+  if (!in_array($situacao,['D','V'],true)) responder(false,'Situação inválida.');
+  if (consultar('SELECT id_carro FROM tb_carro WHERE (placa=? OR chassi=?) AND id_carro<>?',[$placa,$chassi,$id ?? 0])) responder(false,'Já existe um veículo com esta placa ou chassi.');
+  $valores=[$placa,$chassi,$cor,$ano,$anoModelo,$valor,$km,$situacao,$modelo['id_modelo']];
+  if ($id) gravar("UPDATE tb_carro SET placa=?,chassi=?,cor=?,ano=?,ano_modelo=?,valor=?,quilometragem=?,situacao=?,id_modelo=?,vendido_em=IF(?='V',CURRENT_TIMESTAMP,NULL) WHERE id_carro=?",array_merge($valores,[$situacao,$id]));
+  else { gravar('INSERT INTO tb_carro (placa,chassi,cor,ano,ano_modelo,valor,quilometragem,situacao,id_modelo,responsavel) VALUES (?,?,?,?,?,?,?,?,?,?)',array_merge($valores,[$conta['login']]));$id=$pdo->lastInsertId(); }
+  $detalhes=['Placa'=>$placa,'Situação'=>$situacao==='V'?'Vendido':'Disponível','Fabricação'=>$ano,'Ano-modelo'=>$anoModelo,'Cor'=>$cor,'Valor'=>$valor,'Quilometragem'=>$km];
+  if($anterior) { $detalhes['Situação anterior']=$anterior['situacao']==='V'?'Vendido':'Disponível'; $detalhes['Cor anterior']=$anterior['cor']; $detalhes['Valor anterior']=$anterior['valor']; $detalhes['Quilometragem anterior']=$anterior['quilometragem']; $detalhes['Placa anterior']=$anterior['placa']; $detalhes['Chassi']=$chassi; }
+  registrarLog('carros',$acao,'Veículo '.($anterior?'atualizado':'cadastrado').': '.$placa,$detalhes,null);responder(true,'Veículo salvo!');
+ }
+ if ($acao==='vincular' || $acao==='excluir_vinculo') {
+  $c=carroAutorizado($dados['id_carro'] ?? '');if($c['situacao']==='V') responder(false,'Não é permitido alterar acessórios de um veículo vendido.',null,409);
+  $id=$dados['id_acessorio'] ?? ''; $a=consultar('SELECT nome FROM tb_acessorio WHERE id_acessorio=?',[$id])[0] ?? null;
+  if(!$a) responder(false,'Acessório não encontrado.');
+  $existe=consultar('SELECT id_carro FROM tb_carro_acessorio WHERE id_carro=? AND id_acessorio=?',[$c['id_carro'],$id]);
+  if (($acao==='vincular' && $existe) || ($acao==='excluir_vinculo' && !$existe)) responder(false,'O vínculo já existe ou já foi removido. Atualize a lista.');
+  gravar($acao==='vincular'?'INSERT INTO tb_carro_acessorio VALUES (?,?)':'DELETE FROM tb_carro_acessorio WHERE id_carro=? AND id_acessorio=?',[$c['id_carro'],$id]);
+  registrarLog('carros',$acao,'Acessórios do veículo atualizados.',['Placa'=>$c['placa'],'Acessório'=>$a['nome']]);responder(true,'Vínculo atualizado!');
+ }
+ if ($acao==='excluir_carro') {
+  $c=carroAutorizado($dados['id_carro'] ?? '');protegerVendidos('c.id_carro=?',[$c['id_carro']]);
+  gravar('DELETE FROM tb_carro_acessorio WHERE id_carro=?',[$c['id_carro']]);gravar('DELETE FROM tb_carro WHERE id_carro=?',[$c['id_carro']]);
+  registrarLog('carros',$acao,'Veículo excluído: '.$c['placa'],['Placa'=>$c['placa']]);responder(true,'Veículo excluído!');
+ }
+ if ($acao==='excluir_modelo') {
+  $m=consultar('SELECT * FROM tb_modelo WHERE id_modelo=? FOR UPDATE',[$dados['id_modelo'] ?? ''])[0] ?? null;
+  if (!$m || (!$admin && $m['login']!==$conta['login'])) responder(false,'Modelo não encontrado ou sem acesso.',null,403);
+  protegerVendidos('m.id_modelo=?',[$m['id_modelo']]);
+  if(!$admin && consultar('SELECT id_carro FROM tb_carro WHERE id_modelo=? AND responsavel<>?',[$m['id_modelo'],$conta['login']])) responder(false,'Este modelo possui veículo de outro usuário. Peça a exclusão ao administrador.',null,403);
+  gravar('DELETE FROM tb_carro_acessorio WHERE id_carro IN (SELECT id_carro FROM tb_carro WHERE id_modelo=?)',[$m['id_modelo']]);
+  gravar('DELETE FROM tb_carro WHERE id_modelo=?',[$m['id_modelo']]);
+  gravar('DELETE FROM tb_modelo WHERE id_modelo=?',[$m['id_modelo']]);registrarLog('modelos',$acao,'Modelo excluído: '.$m['nome'],['Modelo'=>$m['nome']]);responder(true,'Modelo excluído!');
+ }
+ if ($acao==='excluir_marca' || $acao==='excluir_acessorio' || $acao==='editar_marca' || $acao==='editar_acessorio') {
+  $marca=str_ends_with($acao,'marca');$tabela=$marca?'tb_marca':'tb_acessorio';$coluna=$marca?'id_marca':'id_acessorio';$id=$dados[$coluna] ?? '';
+  $item=consultar("SELECT * FROM $tabela WHERE $coluna=? FOR UPDATE",[$id])[0] ?? null;if(!$item) responder(false,'Cadastro não encontrado.');
+  if(str_starts_with($acao,'excluir')) {
+   if($marca) {
+    protegerVendidos('m.id_marca=?',[$id]);
+    if(!$admin && consultar('SELECT c.id_carro FROM tb_carro c JOIN tb_modelo m ON m.id_modelo=c.id_modelo WHERE m.id_marca=? AND c.responsavel<>?',[$id,$conta['login']])) responder(false,'Esta marca possui veículo de outro usuário. Peça a exclusão ao administrador.',null,403);
+    $modelos=consultar('SELECT login FROM tb_modelo WHERE id_marca=?',[$id]);
+    if(!$admin) foreach($modelos as $modelo) if($modelo['login']!==$conta['login']) responder(false,'Esta marca possui cadastros de outro usuário. Peça a exclusão ao administrador.',null,403);
+    gravar('DELETE FROM tb_carro_acessorio WHERE id_carro IN (SELECT c.id_carro FROM tb_carro c JOIN tb_modelo m ON m.id_modelo=c.id_modelo WHERE m.id_marca=?)',[$id]);
+    gravar('DELETE FROM tb_carro WHERE id_modelo IN (SELECT id_modelo FROM tb_modelo WHERE id_marca=?)',[$id]);
+    gravar('DELETE FROM tb_modelo WHERE id_marca=?',[$id]);
+   } else {
+    $carros=consultar('SELECT c.* FROM tb_carro c JOIN tb_carro_acessorio ca ON ca.id_carro=c.id_carro WHERE ca.id_acessorio=? FOR UPDATE',[$id]);
+    foreach($carros as $c) { if($c['situacao']==='V') responder(false,'O acessório faz parte do histórico de um veículo vendido.',null,409); if(!$admin && $c['responsavel']!==$conta['login']) responder(false,'Acessório utilizado por outro usuário. Peça a exclusão ao administrador.',null,403); }
+    gravar('DELETE FROM tb_carro_acessorio WHERE id_acessorio=?',[$id]);
+   }
+  } else {
+   if($marca) protegerVendidos('m.id_marca=?',[$id]);
+   elseif(consultar("SELECT c.id_carro FROM tb_carro c JOIN tb_carro_acessorio ca ON ca.id_carro=c.id_carro WHERE ca.id_acessorio=? AND c.situacao='V'",[$id])) responder(false,'Cadastro associado a um veículo vendido.',null,409);
+  }
+  if(str_starts_with($acao,'excluir')) gravar("DELETE FROM $tabela WHERE $coluna=?",[$id]);
+  else { $nome=trim($dados['nome'] ?? '');if(!$nome || mb_strlen($nome)>50) responder(false,'Informe um nome com até 50 caracteres.');gravar("UPDATE $tabela SET nome=? WHERE $coluna=?",[$nome,$id]); }
+  registrarLog($marca?'marcas':'carros',$acao,'Catálogo atualizado: '.$item['nome'],['Nome'=>$item['nome']]);responder(true,'Catálogo atualizado!');
+ }
+ if ($acao==='excluir_usuario') {
+  $alvo=consultar('SELECT login,perfil FROM tb_usuario WHERE login=? FOR UPDATE',[$dados['usuario'] ?? ''])[0] ?? null;
+  if(!$alvo || $alvo['perfil']==='admin' || $alvo['login']===$conta['login']) responder(false,'Conta não encontrada ou protegida.');
+  protegerVendidos('c.responsavel=? OR m.login=?',[$alvo['login'],$alvo['login']]);
+  gravar('DELETE FROM tb_carro_acessorio WHERE id_carro IN (SELECT c.id_carro FROM tb_carro c JOIN tb_modelo m ON m.id_modelo=c.id_modelo WHERE c.responsavel=? OR m.login=?)',[$alvo['login'],$alvo['login']]);
+  gravar('DELETE FROM tb_carro WHERE responsavel=? OR id_modelo IN (SELECT id_modelo FROM tb_modelo WHERE login=?)',[$alvo['login'],$alvo['login']]);
+  gravar('DELETE FROM tb_modelo WHERE login=?',[$alvo['login']]);
+  gravar('DELETE FROM tb_log_login WHERE login=?',[$alvo['login']]);gravar('DELETE FROM tb_usuario WHERE login=?',[$alvo['login']]);registrarLog('conta',$acao,'Conta excluída.',['Usuário'=>$alvo['login']]);responder(true,'Conta excluída!');
+ }
+ if ($acao==='logs') {
+  $categoria=$_GET['categoria'] ?? '';if(!in_array($categoria,['modelos','marcas','carros','geral'],true)) responder(false,'Log inválido.');
+  if($categoria==='geral' && !$admin) responder(false,'O log geral é exclusivo do administrador.',null,403);
+  $itens=consultar("SELECT id_log,usuario,categoria,acao,resumo,data_hora,detalhes FROM tb_log_atividade WHERE (?='geral' OR categoria=?) AND (?=1 OR usuario=?) ORDER BY id_log DESC",[$categoria,$categoria,$admin ? 1 : 0,$conta['login']]);
+  // Só campos compreensíveis e previamente conhecidos saem da API.
+  $permitidos=['Usuário','Modelo','Placa','Situação','Situação anterior','Fabricação','Ano-modelo','Cor','Valor','Quilometragem','Acessório','Nome','Cor anterior','Valor anterior','Quilometragem anterior','Placa anterior','Chassi'];
+  foreach($itens as &$l) { $original=json_decode($l['detalhes'],true) ?? []; $limpo=[];foreach(($admin ? $permitidos : ['Placa','Situação','Nome']) as $campo)if(isset($original[$campo]) && is_scalar($original[$campo]))$limpo[$campo]=$original[$campo]; if(!$limpo)$limpo=['Operação'=>$l['resumo']];$l['detalhes']=json_encode($limpo,JSON_UNESCAPED_UNICODE); }
+  responder(true,'',$itens);
+ }
 }
 
 $acao = $_GET['acao'] ?? '';
@@ -68,7 +194,7 @@ if (!is_array($dados)) {
 }
 $publicas = ['sessao', 'login', 'logout', 'cadastro', 'candidato'];
 $leituras = ['sessao', 'marcas', 'modelos', 'carros', 'acessorios', 'carros_acessorios', 'historico', 'logs', 'usuarios', 'candidaturas'];
-$escritas = ['login', 'cadastro', 'candidato', 'marca', 'modelo', 'acessorio', 'carro', 'vincular', 'alterar_senha', 'excluir_marca', 'excluir_modelo', 'excluir_carro', 'excluir_acessorio', 'excluir_vinculo', 'excluir_usuario', 'excluir_candidatura'];
+$escritas = ['editar_carro','editar_modelo','editar_marca','editar_acessorio','login', 'cadastro', 'candidato', 'marca', 'modelo', 'acessorio', 'carro', 'vincular', 'alterar_senha', 'excluir_marca', 'excluir_modelo', 'excluir_carro', 'excluir_acessorio', 'excluir_vinculo', 'excluir_usuario', 'excluir_candidatura'];
 if (!in_array($acao, array_merge($leituras, $escritas, ['logout']), true)) {
     responder(false, 'Ação inválida.', null, 400);
 }
@@ -110,6 +236,8 @@ try {
     if (in_array($acao, $escritas, true) || $acao === 'logout') {
         $pdo->beginTransaction();
     }
+
+    executarCadastros($acao, $dados);
 
     if ($acao === 'sessao') {
         responder(true, '', null, 200, ['usuario' => $conta['login'] ?? null, 'admin' => (bool) $admin]);
@@ -164,51 +292,9 @@ try {
         if (consultar("SELECT nome FROM $tabela WHERE nome = ?", [$nome])) responder(false, 'Esse nome já está cadastrado.');
         $st = $pdo->prepare("INSERT INTO $tabela (nome) VALUES (?)");
         $st->execute([$nome]);
-        registrarLog($categoria, 'cadastro_' . $acao, ($marca ? 'Marca cadastrada: ' : 'Acessório cadastrado: ') . $nome, ['id' => $pdo->lastInsertId(), 'nome' => $nome]);
+        $pdo->prepare("UPDATE $tabela SET responsavel=? WHERE id_" . $acao . "=?")->execute([$conta['login'],$pdo->lastInsertId()]);
+        registrarLog($categoria, 'cadastro_' . $acao, ($marca ? 'Marca cadastrada: ' : 'Acessório cadastrado: ') . $nome, ['Nome' => $nome]);
         responder(true, $marca ? 'Marca cadastrada!' : 'Acessório cadastrado!');
-    }
-    elseif ($acao === 'modelos') {
-        $sql = 'SELECT m.id_modelo, m.nome AS modelo, ma.nome AS marca, m.login AS proprietario FROM tb_modelo m JOIN tb_marca ma ON ma.id_marca = m.id_marca';
-        $parametros = [];
-        if (!$admin) {
-            $sql .= ' WHERE m.login = ?';
-            $parametros[] = $conta['login'];
-        }
-        responder(true, '', consultar($sql . ' ORDER BY m.id_modelo DESC', $parametros));
-    }
-    elseif ($acao === 'modelo') {
-        $modelo = trim($dados['modelo'] ?? '');
-        $idMarca = $dados['id_marca'] ?? '';
-        if ($modelo === '' || mb_strlen($modelo) > 50 || $idMarca === '') responder(false, 'Digite o modelo (até 50 caracteres) e escolha a marca.');
-        if (!consultar('SELECT id_marca FROM tb_marca WHERE id_marca = ?', [$idMarca])) responder(false, 'Marca não encontrada.');
-        if (consultar('SELECT id_modelo FROM tb_modelo WHERE nome = ? AND id_marca = ? AND login = ?', [$modelo, $idMarca, $conta['login']])) responder(false, 'Você já cadastrou esse modelo nessa marca.');
-        $st = $pdo->prepare('INSERT INTO tb_modelo (nome, id_marca, login) VALUES (?, ?, ?)');
-        $st->execute([$modelo, $idMarca, $conta['login']]);
-        registrarLog('modelos', 'cadastro_modelo', 'Modelo cadastrado: ' . $modelo, ['id_modelo' => $pdo->lastInsertId(), 'nome' => $modelo, 'id_marca' => $idMarca, 'proprietario' => $conta['login']]);
-        responder(true, 'Modelo cadastrado!');
-    }
-    elseif ($acao === 'excluir_marca' || $acao === 'excluir_modelo' || $acao === 'excluir_carro') {
-        $tipo = substr($acao, 8);
-        $tabela = 'tb_' . $tipo;
-        $coluna = 'id_' . $tipo;
-        $id = $dados[$coluna] ?? '';
-        $registro = consultar("SELECT * FROM $tabela WHERE $coluna = ? FOR UPDATE", [$id])[0] ?? null;
-        if (!$registro) responder(false, 'Cadastro não encontrado.');
-        if ($tipo === 'modelo' && !$admin && $registro['login'] !== $conta['login']) responder(false, 'Você não pode excluir este modelo.', null, 403);
-        if ($tipo === 'carro' && !$admin && !consultar('SELECT id_modelo FROM tb_modelo WHERE id_modelo = ? AND login = ?', [$registro['id_modelo'], $conta['login']])) responder(false, 'Você não pode excluir este carro.', null, 403);
-        $detalhes = ['registro' => $registro, 'cascata' => dependencias($tipo, $id)];
-        $st = $pdo->prepare("DELETE FROM $tabela WHERE $coluna = ?");
-        $st->execute([$id]);
-        $categoria = ['marca' => 'marcas', 'modelo' => 'modelos', 'carro' => 'carros'][$tipo];
-        $nome = $registro['nome'] ?? $registro['placa'];
-        registrarLog($categoria, $acao, ucfirst($tipo) . ' excluído(a): ' . $nome, $detalhes);
-        if ($categoria !== 'modelos' && count($detalhes['cascata']['modelos']) > 0) {
-            registrarLog('modelos', 'exclusao_em_cascata', 'Modelos removidos por exclusão de ' . $tipo . '.', $detalhes);
-        }
-        if ($categoria !== 'carros' && count($detalhes['cascata']['carros']) > 0) {
-            registrarLog('carros', 'exclusao_em_cascata', 'Carros e vínculos removidos por exclusão de ' . $tipo . '.', $detalhes);
-        }
-        responder(true, 'Cadastro apagado!');
     }
     elseif ($acao === 'alterar_senha') {
         $atual = $dados['senha_atual'] ?? '';
@@ -254,109 +340,8 @@ try {
     elseif ($acao === 'acessorios') {
         responder(true, '', consultar('SELECT * FROM tb_acessorio ORDER BY nome'));
     }
-    elseif ($acao === 'excluir_acessorio') {
-        $id = $dados['id_acessorio'] ?? '';
-        $registro = consultar('SELECT * FROM tb_acessorio WHERE id_acessorio = ? FOR UPDATE', [$id])[0] ?? null;
-        if (!$registro) responder(false, 'Acessório não encontrado.');
-        $vinculos = consultar('SELECT * FROM tb_carro_acessorio WHERE id_acessorio = ?', [$id]);
-        $st = $pdo->prepare('DELETE FROM tb_acessorio WHERE id_acessorio = ?');
-        $st->execute([$id]);
-        registrarLog('carros', $acao, 'Acessório excluído: ' . $registro['nome'], ['registro' => $registro, 'vinculos_removidos' => $vinculos]);
-        responder(true, 'Acessório apagado!');
-    }
-    elseif ($acao === 'carros') {
-        $sql = 'SELECT c.*, m.nome AS modelo, ma.nome AS marca, m.login AS proprietario FROM tb_carro c JOIN tb_modelo m ON m.id_modelo = c.id_modelo JOIN tb_marca ma ON ma.id_marca = m.id_marca';
-        $parametros = [];
-        if (!$admin) { $sql .= ' WHERE m.login = ?'; $parametros[] = $conta['login']; }
-        $carros = consultar($sql . ' ORDER BY c.id_carro DESC', $parametros);
-        foreach ($carros as &$carro) { $carro['valor'] = number_format($carro['valor'], 2, ',', '.'); }
-        responder(true, '', $carros);
-    }
-    elseif ($acao === 'carro') {
-        $placa = strtoupper(trim($dados['placa'] ?? ''));
-        $chassi = strtoupper(trim($dados['chassi'] ?? ''));
-        $cor = trim($dados['cor'] ?? '');
-        $ano = trim($dados['ano'] ?? '');
-        $valor = str_replace(',', '.', trim($dados['valor'] ?? ''));
-        $km = trim($dados['quilometragem'] ?? '');
-        $situacao = $dados['situacao'] ?? '';
-        $idModelo = $dados['id_modelo'] ?? '';
-        if (!preg_match('/^[A-Z0-9]{7}$/', $placa)) responder(false, 'A placa precisa ter 7 letras ou números.');
-        if (!preg_match('/^[A-Z0-9]{5,30}$/', $chassi)) responder(false, 'O chassi precisa ter de 5 a 30 letras ou números.');
-        if ($idModelo === '') responder(false, 'Escolha o modelo.');
-        if (mb_strlen($cor) < 2 || mb_strlen($cor) > 30 || !preg_match('/^[\p{L} ]+$/u', $cor)) responder(false, 'Digite a cor (só letras, até 30 caracteres).');
-        if (!preg_match('/^[0-9]{4}$/', $ano) || $ano < 1900 || $ano > date('Y') + 1) responder(false, 'Digite um ano válido, de 1900 até ' . (date('Y') + 1) . '.');
-        if (!preg_match('/^[0-9]+(\.[0-9]{1,2})?$/', $valor) || $valor <= 0 || $valor > 99999999) responder(false, 'Digite um valor maior que zero (ex: 35000,50).');
-        if (!preg_match('/^[0-9]{1,7}$/', $km)) responder(false, 'Digite a quilometragem com até 7 números inteiros (0 ou mais).');
-        if (!in_array($situacao, ['D', 'V'], true)) responder(false, 'Escolha a situação do carro.');
-        $modelo = consultar('SELECT * FROM tb_modelo WHERE id_modelo = ?', [$idModelo])[0] ?? null;
-        if (!$modelo || (!$admin && $modelo['login'] !== $conta['login'])) responder(false, 'Modelo não encontrado.');
-        if (consultar('SELECT id_carro FROM tb_carro WHERE placa = ?', [$placa])) responder(false, 'Já existe um carro com essa placa.');
-        if (consultar('SELECT id_carro FROM tb_carro WHERE chassi = ?', [$chassi])) responder(false, 'Já existe um carro com esse chassi.');
-        $st = $pdo->prepare('INSERT INTO tb_carro (placa, chassi, cor, ano, valor, quilometragem, situacao, id_modelo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $st->execute([$placa, $chassi, $cor, $ano, $valor, $km, $situacao, $idModelo]);
-        $registro = consultar('SELECT * FROM tb_carro WHERE id_carro = ?', [$pdo->lastInsertId()])[0];
-        registrarLog('carros', 'cadastro_carro', 'Carro cadastrado: ' . $placa, ['registro' => $registro, 'proprietario' => $modelo['login']]);
-        responder(true, 'Carro cadastrado!');
-    }
-    elseif ($acao === 'carros_acessorios') {
-        $sql = 'SELECT c.id_carro, c.placa, a.id_acessorio, a.nome AS acessorio FROM tb_carro_acessorio ca INNER JOIN tb_carro c ON c.id_carro = ca.id_carro INNER JOIN tb_acessorio a ON a.id_acessorio = ca.id_acessorio INNER JOIN tb_modelo m ON m.id_modelo = c.id_modelo';
-        $parametros = [];
-        if (!$admin) { $sql .= ' WHERE m.login = ?'; $parametros[] = $conta['login']; }
-        responder(true, '', consultar($sql . ' ORDER BY c.placa, a.nome', $parametros));
-    }
-    elseif ($acao === 'vincular' || $acao === 'excluir_vinculo') {
-        $idCarro = $dados['id_carro'] ?? '';
-        $idAcessorio = $dados['id_acessorio'] ?? '';
-        $carro = consultar('SELECT c.placa, m.login FROM tb_carro c JOIN tb_modelo m ON m.id_modelo = c.id_modelo WHERE c.id_carro = ?', [$idCarro])[0] ?? null;
-        if (!$carro || (!$admin && $carro['login'] !== $conta['login'])) responder(false, 'Carro não encontrado.');
-        $acessorio = consultar('SELECT nome FROM tb_acessorio WHERE id_acessorio = ?', [$idAcessorio])[0] ?? null;
-        if (!$acessorio) responder(false, 'Acessório não encontrado.');
-        $existe = consultar('SELECT * FROM tb_carro_acessorio WHERE id_carro = ? AND id_acessorio = ?', [$idCarro, $idAcessorio]);
-        if ($acao === 'vincular' && $existe) responder(false, 'Esse carro já tem esse acessório.');
-        if ($acao === 'excluir_vinculo' && !$existe) responder(false, 'Vínculo não encontrado.');
-        $sql = $acao === 'vincular' ? 'INSERT INTO tb_carro_acessorio (id_carro, id_acessorio) VALUES (?, ?)' : 'DELETE FROM tb_carro_acessorio WHERE id_carro = ? AND id_acessorio = ?';
-        $st = $pdo->prepare($sql);
-        $st->execute([$idCarro, $idAcessorio]);
-        $resumo = ($acao === 'vincular' ? 'Acessório colocado no carro: ' : 'Acessório retirado do carro: ') . $carro['placa'];
-        registrarLog('carros', $acao, $resumo, ['id_carro' => $idCarro, 'id_acessorio' => $idAcessorio, 'acessorio' => $acessorio['nome'], 'proprietario' => $carro['login']]);
-        responder(true, $acao === 'vincular' ? 'Acessório colocado no carro!' : 'Acessório retirado do carro!');
-    }
-    elseif ($acao === 'logs') {
-        $categoria = $_GET['categoria'] ?? '';
-        if (!in_array($categoria, ['modelos', 'marcas', 'carros', 'geral'], true)) responder(false, 'Log inválido.', null, 400);
-        if ($categoria === 'geral' && !$admin) responder(false, 'O log geral é exclusivo do administrador.', null, 403);
-        $colunas = 'id_log, usuario, categoria, acao, resumo, data_hora';
-        if ($admin) $colunas .= ', detalhes, ip, navegador';
-        $sql = "SELECT $colunas FROM tb_log_atividade WHERE 1 = 1";
-        $parametros = [];
-        if ($categoria !== 'geral') { $sql .= ' AND categoria = ?'; $parametros[] = $categoria; }
-        if (!$admin) { $sql .= ' AND usuario = ?'; $parametros[] = $conta['login']; }
-        responder(true, '', consultar($sql . ' ORDER BY id_log DESC', $parametros));
-    }
     elseif ($acao === 'usuarios') {
         responder(true, '', consultar('SELECT login, senha AS senha_hash, perfil FROM tb_usuario ORDER BY login'));
-    }
-    elseif ($acao === 'excluir_usuario') {
-        $login = trim($dados['usuario'] ?? '');
-        $alvo = consultar('SELECT login, perfil FROM tb_usuario WHERE login = ? FOR UPDATE', [$login])[0] ?? null;
-        if (!$alvo) responder(false, 'Usuário não encontrado.');
-        if ($alvo['login'] === $conta['login'] || $alvo['perfil'] === 'admin') responder(false, 'A conta do administrador não pode ser excluída.');
-        $detalhes = ['usuario' => $alvo, 'cascata' => dependencias('usuario', $alvo['login']), 'acessos_anteriores' => consultar('SELECT id_log, login, data_hora_login FROM tb_log_login WHERE login = ?', [$alvo['login']])];
-        $st = $pdo->prepare('DELETE FROM tb_modelo WHERE login = ?');
-        $st->execute([$alvo['login']]);
-        $st = $pdo->prepare('DELETE FROM tb_log_login WHERE login = ?');
-        $st->execute([$alvo['login']]);
-        $st = $pdo->prepare('DELETE FROM tb_usuario WHERE login = ?');
-        $st->execute([$alvo['login']]);
-        registrarLog('conta', $acao, 'Usuário excluído: ' . $alvo['login'], $detalhes);
-        if (count($detalhes['cascata']['modelos']) > 0) {
-            registrarLog('modelos', 'exclusao_em_cascata', 'Modelos removidos por exclusão de usuário.', $detalhes);
-        }
-        if (count($detalhes['cascata']['carros']) > 0) {
-            registrarLog('carros', 'exclusao_em_cascata', 'Carros e vínculos removidos por exclusão de usuário.', $detalhes);
-        }
-        responder(true, 'Usuário excluído. Os modelos, carros e vínculos dele também foram apagados.');
     }
     elseif ($acao === 'candidaturas') {
         responder(true, '', consultar('SELECT * FROM tb_trabalheconosco ORDER BY id_candidato DESC'));
@@ -373,12 +358,13 @@ try {
 } catch (Throwable $e) {
     error_log('Revendedora [' . $acao . ']: ' . $e->getMessage());
     $codigo = $e instanceof PDOException ? ($e->errorInfo[1] ?? 0) : 0;
-    $mensagem = 'Erro interno na API. Consulte o log de erros do Apache.';
+    $mensagem = 'Não foi possível concluir a operação. Tente novamente ou informe o código ao responsável.';
     if ($e instanceof PDOException) {
-        $mensagem = 'Não foi possível acessar o banco. Confira se o MySQL está ligado e revise o conexao.php (casa: 3306; Etec: 3307).';
-        if (in_array($codigo, [1054, 1146, 1406], true)) $mensagem = 'O banco precisa ser atualizado. Execute atualizar_banco.sql no MySQL Workbench, sem apagar os dados.';
+        $mensagem = 'O serviço está temporariamente indisponível. Tente novamente ou procure o responsável.';
+        if (in_array($codigo, [1054, 1146, 1406], true)) $mensagem = 'A atualização do sistema precisa ser concluída pelo responsável.';
         if ($codigo === 1062) $mensagem = 'Já existe um cadastro com esses dados.';
         if ($codigo === 1452) $mensagem = 'O cadastro relacionado não existe mais. Atualize a página.';
     }
+    if ($codigo === 1451 || $codigo === 1644) $mensagem = 'Operação bloqueada para preservar cadastros relacionados e histórico de vendidos.';
     responder(false, $mensagem, null, 500);
 }

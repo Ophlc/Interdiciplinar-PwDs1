@@ -252,6 +252,7 @@
 <!-- 3° Tela a principal -->
 
 @if (tela === 'principal') {
+  <div class="sistema-logado">
 
   <div class="topo">
     <span class="nome-sistema">
@@ -265,21 +266,29 @@
     </span>
   </div>
 
-  <!--Abas da tela principal -->
-  <div class="abas" [class.abas-admin]="admin">
-    <a href="#" [class.ativa]="aba === 'modelos'" (click)="trocarAba('modelos', $event)">Modelos</a>
-    <a href="#" [class.ativa]="aba === 'marcas'" (click)="trocarAba('marcas', $event)">Marcas</a>
-    <a href="#" [class.ativa]="aba === 'acessorios'" (click)="trocarAba('acessorios', $event)">Acessórios</a>
-    <a href="#" [class.ativa]="aba === 'carros'" (click)="trocarAba('carros', $event)">Carros</a>
-    <a href="#" [class.ativa]="aba === 'vinculos'" (click)="trocarAba('vinculos', $event)">Carros / Acessórios</a>
-    <a href="#" [class.ativa]="aba === 'conta'" (click)="trocarAba('conta', $event)">Alterar senha</a>
-    @if (admin) {
-      <a href="#" [class.ativa]="aba === 'usuarios'" (click)="trocarAba('usuarios', $event)">Usuários</a>
-      <a href="#" [class.ativa]="aba === 'candidaturas'" (click)="trocarAba('candidaturas', $event)">Candidaturas</a>
-      <a href="#" [class.ativa]="aba === 'logs'" (click)="trocarAba('logs', $event)">Log geral</a>
+  <div class="layout-sistema">
+  <nav class="menu-lateral" [class.menu-aberto]="menuAberto" aria-label="Menu principal">
+    <button type="button" class="menu-movel" (click)="menuAberto = !menuAberto" [attr.aria-expanded]="menuAberto">☰ Menu</button>
+    @for (grupo of gruposMenu; track grupo.nome) {
+      @if ((grupo.nome !== 'Administração' || admin) && (grupo.nome !== 'Minha conta' || !admin)) {
+        <details open>
+          <summary>{{ grupo.nome }}</summary>
+          @for (item of grupo.itens; track item.id) {
+            @if (!item.admin || admin) { <a href="#" [class.ativa]="aba === item.id" [attr.aria-current]="aba === item.id ? 'page' : null" (click)="trocarAba(item.id, $event); menuAberto = false">{{ item.nome }}</a> }
+          }
+        </details>
+      }
     }
-  </div>
-
+    <a href="#" (click)="sair($event)">Sair</a>
+  </nav>
+  <main class="conteudo-sistema">
+    <div class="mensagens">
+      @if (msg) { <div class="aviso ok notificacao" role="status">{{ msg }} <button type="button" aria-label="Fechar aviso" (click)="msg=''">×</button></div> }
+      @if (erro) { <div class="aviso erro notificacao" role="alert">{{ erro }} <button type="button" aria-label="Fechar erro" (click)="erro=''">×</button></div> }
+    </div>
+    @if (['marcas','modelos','acessorios','veiculos','vendidos','vinculos','usuarios','candidaturas'].includes(aba)) {
+      <div class="caixa filtros"><label>Pesquisar<input [(ngModel)]="busca" placeholder="ID, nome ou placa"></label></div>
+    }
   @if (exclusaoPendente) {
     <div class="caixa perigo" id="confirmacao-exclusao">
       <h2>Confirmar exclusão</h2>
@@ -306,13 +315,9 @@
     <div class="caixa">
       <h1>Cadastro</h1>
 
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
 
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
+
+
 
       <form #modeloForm="ngForm" (ngSubmit)="cadastrarModelo()" novalidate>
 
@@ -335,7 +340,7 @@
           >
             <option value="">Selecione a marca</option>
 
-            @for (m of marcas; track m.id_marca) {
+            @for (m of marcasFiltradas; track m.id_marca) {
               <option [value]="m.id_marca">{{ m.nome }}</option>
             }
           </select>
@@ -367,13 +372,13 @@
                 <th></th>
               </tr>
 
-              @for (l of lista; track $index) {
+              @for (l of modelosFiltrados; track $index) {
                 <tr>
                   <td>{{ l.modelo }}</td>
                   <td>{{ l.marca }}</td>
                   @if (admin) { <td>{{ l.proprietario }}</td> }
                   <td>
-                    <button type="button" class="excluir" (click)="excluirModelo(l)">Excluir</button>
+                     <button type="button" class="excluir" (click)="excluirModelo(l)">Excluir</button>
                   </td>
                 </tr>
               }
@@ -392,13 +397,9 @@
 
       <h1>Cadastro de marca</h1>
 
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
 
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
+
+
 
       <form #marcaForm="ngForm" (ngSubmit)="cadastrarMarca()" novalidate>
 
@@ -440,7 +441,7 @@
                 <th></th>
               </tr>
 
-              @for (m of marcas; track m.id_marca) {
+              @for (m of marcasFiltradas; track m.id_marca) {
                 <tr>
                   <td>{{ m.nome }}</td>
                   <td>
@@ -467,13 +468,9 @@
 
       <h1>Cadastro de acessório</h1>
 
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
 
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
+
+
 
       <form #acessorioForm="ngForm" (ngSubmit)="cadastrarAcessorio()" novalidate>
 
@@ -515,7 +512,7 @@
                 <th></th>
               </tr>
 
-              @for (a of acessorios; track a.id_acessorio) {
+              @for (a of acessoriosFiltrados; track a.id_acessorio) {
                 <tr>
                   <td>{{ a.nome }}</td>
                   <td>
@@ -535,346 +532,64 @@
   }
 
 
-  <!-- Aba dos carros -->
   @if (aba === 'carros') {
-
-    <!-- Formulário do carro -->
-    <div class="caixa">
-
-      <h1>Cadastro de carro</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #carroForm="ngForm" (ngSubmit)="cadastrarCarro(carroForm)" novalidate>
-
+    <section class="caixa">
+      <h1>{{ idEdicaoCarro ? 'Editar veículo' : 'Cadastrar veículo' }}</h1>
+      @if (!idEdicaoCarro) { <p>A situação inicial será Disponível.</p> }
+      <form #carroForm="ngForm" (ngSubmit)="cadastrarCarro(carroForm)">
+        <div class="linha"><label>Placa<input name="placa" [(ngModel)]="novoCarro.placa" maxlength="7" pattern="[A-Za-z0-9]{7}" required></label><label>Chassi<input name="chassi" [(ngModel)]="novoCarro.chassi" maxlength="30" pattern="[A-Za-z0-9]{5,30}" required></label></div>
         <div class="linha">
-          <label> Placa
-            <input
-              type="text"
-              name="placa"
-              [(ngModel)]="novoCarro.placa"
-              #fPlaca="ngModel"
-              placeholder="ABC1234"
-              maxlength="7"
-              pattern="[A-Za-z0-9]{7}"
-              required
-            >
-            @if (fPlaca.invalid && fPlaca.touched) {
-              <small class="campo-erro">A placa tem 7 letras ou números.</small>
-            }
-          </label>
-
-          <label> Chassi
-            <input
-              type="text"
-              name="chassi"
-              [(ngModel)]="novoCarro.chassi"
-              #fChassi="ngModel"
-              placeholder="Número do chassi"
-              maxlength="30"
-              pattern="[A-Za-z0-9]{5,30}"
-              required
-            >
-            @if (fChassi.invalid && fChassi.touched) {
-              <small class="campo-erro">De 5 a 30 letras ou números.</small>
-            }
-          </label>
+          <label>Modelo<select name="modelo" [(ngModel)]="novoCarro.id_modelo" required><option value="">Selecione</option>@for (m of modelosDisponiveis; track m.id_modelo) { <option [value]="'' + m.id_modelo">{{ m.marca }} {{ m.modelo }}</option> }</select></label>
+          <label>Ano/Modelo<input name="ano_modelo_texto" [(ngModel)]="novoCarro.ano_modelo_texto" maxlength="9" pattern="[0-9]{4}/[0-9]{4}" placeholder="2026/2027" required><small class="campo-ajuda">Fabricação/modelo, por exemplo 2026/2027.</small></label>
         </div>
-
-        <!-- COMBOBOX: os modelos que a pessoa já cadastrou -->
-        <label> Modelo
-          <select
-            name="id_modelo"
-            [(ngModel)]="novoCarro.id_modelo"
-            required
-          >
-            <option value="">Selecione o modelo</option>
-
-            @for (l of lista; track l.id_modelo) {
-              <option [value]="l.id_modelo">{{ l.modelo }} - {{ l.marca }}{{ admin ? ' (' + l.proprietario + ')' : '' }}</option>
-            }
-          </select>
-          @if (lista.length === 0) {
-            <small class="campo-ajuda">Cadastre um modelo na aba Modelos antes.</small>
-          }
-        </label>
-
-        <div class="linha">
-          <label> Cor
-            <input
-              type="text"
-              name="cor"
-              [(ngModel)]="novoCarro.cor"
-              #fCor="ngModel"
-              placeholder="Preto"
-              maxlength="30"
-              minlength="2"
-              pattern="[A-Za-zÀ-ÿ ]+"
-              required
-            >
-            @if (fCor.invalid && fCor.touched) {
-              <small class="campo-erro">Digite a cor, só com letras.</small>
-            }
-          </label>
-
-          <label class="estreito"> Ano
-            <input
-              type="text"
-              name="ano"
-              [(ngModel)]="novoCarro.ano"
-              #fAno="ngModel"
-              placeholder="2022"
-              inputmode="numeric"
-              maxlength="4"
-              pattern="[0-9]{4}"
-              required
-            >
-            @if (fAno.invalid && fAno.touched) {
-              <small class="campo-erro">4 números.</small>
-            }
-          </label>
-        </div>
-
-        <div class="linha">
-          <label> Valor (R$)
-            <input
-              type="text"
-              name="valor"
-              [(ngModel)]="novoCarro.valor"
-              #fValor="ngModel"
-              placeholder="35000,50"
-              inputmode="decimal"
-              maxlength="11"
-              pattern="[0-9]+([.,][0-9]{1,2})?"
-              required
-            >
-            @if (fValor.invalid && fValor.touched) {
-              <small class="campo-erro">Digite um valor, tipo 35000 ou 35000,50.</small>
-            }
-          </label>
-
-          <label> Quilometragem
-            <input
-              type="text"
-              name="quilometragem"
-              [(ngModel)]="novoCarro.quilometragem"
-              #fKm="ngModel"
-              placeholder="82000"
-              inputmode="numeric"
-              maxlength="7"
-              pattern="[0-9]+"
-              required
-            >
-            @if (fKm.invalid && fKm.touched) {
-              <small class="campo-erro">Só números inteiros.</small>
-            }
-          </label>
-        </div>
-
-        <label> Situação
-          <select
-            name="situacao"
-            [(ngModel)]="novoCarro.situacao"
-            required
-          >
-            <option value="">Selecione a situação</option>
-            <option value="D">Disponível</option>
-            <option value="V">Vendido</option>
-          </select>
-        </label>
-
-        <button type="submit" [disabled]="carroForm.invalid">
-          Cadastrar
-        </button>
-
+        <div class="linha"><label>Cor<input name="cor" [(ngModel)]="novoCarro.cor" maxlength="30" required></label><label>Valor (R$)<input name="valor" [(ngModel)]="novoCarro.valor" inputmode="decimal" required></label><label>Quilometragem<input name="km" [(ngModel)]="novoCarro.quilometragem" inputmode="numeric" pattern="[0-9]{1,7}" required></label></div>
+        @if (idEdicaoCarro) { <label>Situação<select name="situacao" [(ngModel)]="novoCarro.situacao" required><option value="D">Disponível</option><option value="V">Vendido</option></select></label><p>Ao salvar como vendido, o veículo e seus acessórios ficam somente para consulta.</p> }
+        <button type="submit" [disabled]="carroForm.invalid">Salvar veículo</button>
+        @if (idEdicaoCarro) { <button type="button" (click)="idEdicaoCarro=null; limparCarro()">Cancelar edição</button> }
       </form>
-
-    </div>
-
-    <!-- Tabela dos carros cadastrados -->
-    <div class="caixa">
-
-      <h2>Seus carros cadastrados</h2>
-
-      @if (carros.length === 0) {
-
-        <p>Nenhum carro cadastrado para exibir.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>Placa</th>
-                @if (admin) { <th>Usuário</th> }
-                <th>Chassi</th>
-                <th>Modelo</th>
-                <th>Cor</th>
-                <th>Ano</th>
-                <th>Valor</th>
-                <th>Km</th>
-                <th>Situação</th>
-                <th></th>
-              </tr>
-
-              @for (c of carros; track c.id_carro) {
-                <tr>
-                  <td>{{ c.placa }}</td>
-                  @if (admin) { <td>{{ c.proprietario }}</td> }
-                  <td>{{ c.chassi }}</td>
-                  <td>{{ c.modelo }} - {{ c.marca }}</td>
-                  <td>{{ c.cor }}</td>
-                  <td>{{ c.ano }}</td>
-                  <td>R$ {{ c.valor }}</td>
-                  <td>{{ c.quilometragem }}</td>
-                  <td>{{ c.situacao === 'D' ? 'Disponível' : 'Vendido' }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirCarro(c)">Excluir</button>
-                  </td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
+    </section>
   }
-
-
-  <!-- Aba dos carros e acessórios -->
+  @if (paginaVeiculos) {
+    <section class="caixa"><h1>{{ tituloVeiculos }}</h1>
+      <div class="tabela-responsiva"><table><thead><tr><th>ID</th><th>Veículo</th><th>Ações</th></tr></thead><tbody>
+      @for (c of carrosFiltrados; track c.id_carro) {
+        <tr><td>{{ c.id_carro }}</td><td>{{ c.marca }} {{ c.modelo }}</td><td class="acoes-tabela">
+          <button type="button" aria-label="Visualizar veículo" title="Visualizar veículo" (click)="carroVisualizado=c">👁</button>
+          @if (c.pode_editar) { <button type="button" aria-label="Editar veículo" title="Editar veículo" (click)="editarCarro(c)">✎</button> }
+          @if (c.pode_editar) { <button type="button" class="excluir" (click)="excluirCarro(c)">Excluir</button> }
+        </td></tr>
+      } @empty { <tr><td colspan="3">Nenhum veículo encontrado.</td></tr> }
+      </tbody></table></div>
+    </section>
+    @if (carroVisualizado; as c) {
+      <section class="caixa" aria-label="Detalhes do veículo"><h2>{{ c.marca }} {{ c.modelo }}</h2>
+        <dl class="dados-veiculo"><dt>ID / placa</dt><dd>{{ c.id_carro }} / {{ c.placa }}</dd><dt>Chassi</dt><dd>{{ c.chassi }}</dd><dt>Ano/Modelo</dt><dd>{{ c.ano_modelo_texto }}</dd><dt>Cor</dt><dd>{{ c.cor }}</dd><dt>Valor / Km</dt><dd>R$ {{ c.valor }} / {{ c.quilometragem }}</dd><dt>Situação</dt><dd>{{ c.situacao === 'V' ? 'Vendido (somente consulta)' : 'Disponível' }}</dd><dt>Cadastrado por</dt><dd>{{ c.responsavel }}</dd><dt>Acessórios</dt><dd>@for (a of c.acessorios; track a.id_acessorio) { <div>{{ a.id_acessorio }} — {{ a.nome }}</div> } @empty { Nenhum acessório }</dd></dl>
+        <button type="button" (click)="carroVisualizado=null">Fechar detalhes</button>
+      </section>
+    }
+  }
   @if (aba === 'vinculos') {
-
-    <!-- Formulário: escolhe o carro e o acessório -->
-    <div class="caixa">
-
-      <h1>Acessórios do carro</h1>
-
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
+    <section class="caixa"><h1>Carros / Acessórios</h1>
+      <label>Selecione o veículo<select [(ngModel)]="vinculo.id_carro"><option value="">Selecione</option>@for (c of carros; track c.id_carro) { <option [value]="''+c.id_carro">{{ c.placa }} — {{ c.marca }} {{ c.modelo }}</option> }</select></label>
+      @if (carroDoVinculo; as c) {
+        @if (c.pode_editar) {
+          <form #vinculoForm="ngForm" (ngSubmit)="vincular()"><label>Acessório do catálogo<select name="acessorio" [(ngModel)]="vinculo.id_acessorio" required><option value="">Selecione</option>@for (a of acessoriosFiltrados; track a.id_acessorio) { <option [value]="''+a.id_acessorio">{{ a.nome }}</option> }</select></label><button [disabled]="vinculoForm.invalid">Colocar no carro</button></form>
+        } @else { <p>Consulta: somente o responsável ou admin pode alterar os acessórios de um veículo disponível.</p> }
+        <h2>Acessórios associados</h2>
+        @for (a of c.acessorios; track a.id_acessorio) { <p>{{ a.id_acessorio }} — {{ a.nome }} @if (c.pode_editar) { <button type="button" class="excluir" (click)="excluirVinculo({id_carro:c.id_carro,placa:c.placa,id_acessorio:a.id_acessorio,acessorio:a.nome})">Remover somente este acessório</button> }</p> } @empty { <p>Nenhum acessório associado.</p> }
       }
-
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
-
-      <form #vinculoForm="ngForm" (ngSubmit)="vincular()" novalidate>
-
-        <!-- COMBOBOX: os carros cadastrados -->
-        <label> Carro
-          <select
-            name="id_carro"
-            [(ngModel)]="vinculo.id_carro"
-            required
-          >
-            <option value="">Selecione o carro</option>
-
-            @for (c of carros; track c.id_carro) {
-              <option [value]="c.id_carro">{{ c.placa }} - {{ c.modelo }}</option>
-            }
-          </select>
-          @if (carros.length === 0) {
-            <small class="campo-ajuda">Cadastre um carro na aba Carros antes.</small>
-          }
-        </label>
-
-        <!-- COMBOBOX: os acessórios cadastrados -->
-        <label> Acessório
-          <select
-            name="id_acessorio"
-            [(ngModel)]="vinculo.id_acessorio"
-            required
-          >
-            <option value="">Selecione o acessório</option>
-
-            @for (a of acessorios; track a.id_acessorio) {
-              <option [value]="a.id_acessorio">{{ a.nome }}</option>
-            }
-          </select>
-          @if (acessorios.length === 0) {
-            <small class="campo-ajuda">Cadastre um acessório na aba Acessórios antes.</small>
-          }
-        </label>
-
-        <button type="submit" [disabled]="vinculoForm.invalid">
-          Colocar no carro
-        </button>
-
-      </form>
-
-    </div>
-
-    <!-- Tabela: acessórios que foram colocados em cada carro -->
-    <div class="caixa">
-
-      <h2>Acessórios relacionados aos carros</h2>
-
-      @if (vinculos.length === 0) {
-
-        <p>Nenhum acessório foi colocado em um carro ainda.</p>
-
-      } @else {
-
-        <div class="tabela-responsiva">
-          <table>
-            <tbody>
-
-              <tr>
-                <th>ID carro</th>
-                <th>Placa</th>
-                <th>ID acessório</th>
-                <th>Acessório</th>
-                <th></th>
-              </tr>
-
-              @for (v of vinculos; track $index) {
-                <tr>
-                  <td>{{ v.id_carro }}</td>
-                  <td>{{ v.placa }}</td>
-                  <td>{{ v.id_acessorio }}</td>
-                  <td>{{ v.acessorio }}</td>
-                  <td>
-                    <button type="button" class="excluir" (click)="excluirVinculo(v)">Excluir</button>
-                  </td>
-                </tr>
-              }
-
-            </tbody>
-          </table>
-        </div>
-
-      }
-
-    </div>
-
+    </section>
+    <section class="caixa"><h2>Veículos e seus acessórios</h2><div class="tabela-responsiva"><table><thead><tr><th>ID</th><th>Veículo</th><th>Acessórios</th></tr></thead><tbody>@for (c of carrosFiltrados; track c.id_carro) { <tr><td>{{ c.id_carro }}</td><td>{{ c.marca }} {{ c.modelo }}</td><td class="resumo-log"><table class="acessorios-do-veiculo" aria-label="Acessórios do veículo"><thead><tr><th>ID</th><th>Acessório</th></tr></thead><tbody>@for (a of c.acessorios; track a.id_acessorio) { <tr><td>{{ a.id_acessorio }}</td><td>{{ a.nome }}</td></tr> } @empty { <tr><td colspan="2">Nenhum acessório</td></tr> }</tbody></table></td></tr> }</tbody></table></div></section>
   }
-
-
-  <!--Alterar senha/ o datagrid la-->
   @if (aba === 'conta') {
 
     <div class="caixa">
 
       <h1>Alterar senha</h1>
 
-      @if (msg !== '') {
-        <div class="aviso ok">{{ msg }}</div>
-      }
 
-      @if (erro !== '') {
-        <div class="aviso erro">{{ erro }}</div>
-      }
+
+
 
       <form #senhaForm="ngForm" (ngSubmit)="alterarSenha()" novalidate>
 
@@ -964,17 +679,17 @@
   @if (admin && aba === 'usuarios') {
     <div class="caixa">
       <h1>Usuários cadastrados</h1>
-      @if (msg) { <p class="aviso ok" role="status">{{ msg }}</p> }
-      @if (erro) { <p class="aviso erro" role="alert">{{ erro }}</p> }
-      <p>A senha é exibida como hash. A conta do administrador não pode ser excluída.</p>
+      
+      
+      <p>A conta do administrador não pode ser excluída.</p>
       <div class="tabela-responsiva">
         <table>
           <thead><tr><th>Login</th><th>Perfil</th><th>Hash da senha</th><th>Ação</th></tr></thead>
           <tbody>
-            @for (conta of usuarios; track conta.login) {
+            @for (conta of usuariosFiltrados; track conta.login) {
               <tr>
-                <td>{{ conta.login }}</td><td>{{ conta.perfil }}</td>
-                <td class="senha-hash"><code>{{ conta.senha_hash }}</code></td>
+                <td>{{ conta.login }}</td><td>{{ conta.perfil }}</td><td class="senha-hash"><code>{{ conta.senha_hash }}</code></td>
+                
                 <td>
                   @if (conta.perfil === 'admin' || conta.login === usuario) {
                     <span>Conta protegida</span>
@@ -993,15 +708,15 @@
   @if (admin && aba === 'candidaturas') {
     <div class="caixa">
       <h1>Candidaturas recebidas</h1>
-      @if (msg) { <p class="aviso ok" role="status">{{ msg }}</p> }
-      @if (erro) { <p class="aviso erro" role="alert">{{ erro }}</p> }
+      
+      
       @if (!candidaturas.length) { <p>Nenhuma candidatura recebida.</p> }
       @else {
         <div class="tabela-responsiva">
           <table>
             <thead><tr><th>Nome</th><th>E-mail</th><th>Celular</th><th>Cidade / UF</th><th>Cargo</th><th>LinkedIn</th><th>Ação</th></tr></thead>
             <tbody>
-              @for (c of candidaturas; track c.id_candidato) {
+              @for (c of candidaturasFiltradas; track c.id_candidato) {
                 <tr>
                   <td>{{ c.nome }}</td><td>{{ c.email }}</td><td>{{ c.celular }}</td>
                   <td>{{ c.cidade }} / {{ c.estado }}</td><td>{{ c.cargo_pretendido }}</td>
@@ -1041,17 +756,16 @@
             <p>{{ registrosLog.length }} registro(s). A exportação inclui todos os registros exibidos.</p>
             <div class="tabela-responsiva">
               <table>
-                <thead><tr><th>Número</th><th>Data / hora</th><th>Usuário</th><th>Ação</th><th>Descrição</th>@if (admin) { <th>Detalhes</th> }</tr></thead>
+                <thead><tr><th>Número</th><th>Data / hora</th><th>Usuário</th><th>Ação</th><th>Descrição</th>@if (podeGerenciar) { <th>Detalhes</th> }</tr></thead>
                 <tbody>
                   @for (log of registrosLog; track log.id_log) {
                     <tr>
                       <td>{{ log.id_log }}</td><td>{{ log.data_hora }}</td><td>{{ log.usuario }}</td>
                       <td>{{ log.acao }}</td><td class="resumo-log">{{ log.resumo }}</td>
-                      @if (admin) {
+                      @if (podeGerenciar) {
                         <td>
                           <details><summary>Ver detalhes</summary>
-                            <p>Categoria: {{ log.categoria }}<br>IP: {{ log.ip }}<br>Navegador: {{ log.navegador }}</p>
-                            <pre>{{ detalhesLog(log) }}</pre>
+                            <dl>@for (campo of detalhesCampos(log); track campo.rotulo) { <dt>{{ campo.rotulo }}</dt><dd>{{ campo.valor }}</dd> }</dl>
                           </details>
                         </td>
                       }
@@ -1065,5 +779,10 @@
       }
     </div>
   }
+
+
+    <footer class="rodape-sistema">System of &lt;Devs&gt;</footer>
+  </main></div>
+  </div>
 
 }

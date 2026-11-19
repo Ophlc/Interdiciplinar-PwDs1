@@ -6,6 +6,7 @@ import { Title } from '@angular/platform-browser';
 
 // Faz os dados chegarem no PHP
 interface Marca {
+  responsavel?: string;
   id_marca: number;
   nome: string;
 }
@@ -15,6 +16,7 @@ interface ModeloCadastrado {
   modelo: string;
   marca: string;
   proprietario: string;
+  id_marca?: number;
 }
 
 // Login do histórico
@@ -25,11 +27,19 @@ interface Acesso {
 }
 
 interface Acessorio {
+  responsavel?: string;
   id_acessorio: number;
   nome: string;
 }
 
 interface Carro {
+  ano_modelo: number | null;
+  ano_modelo_texto: string;
+  pode_editar: boolean;
+  id_modelo: number;
+  valor_numerico: string;
+  responsavel: string;
+  acessorios: { id_acessorio: number; nome: string }[];
   id_carro: number;
   placa: string;
   chassi: string;
@@ -41,6 +51,7 @@ interface Carro {
   modelo: string;
   marca: string;
   proprietario: string;
+  id_marca?: number;
 }
 
 // Um acessório que está em um carro
@@ -86,11 +97,14 @@ interface PedidoExclusao {
   descricao: string;
 }
 
+
 interface Resposta {
   admin?: boolean;
   sucesso: boolean;
   mensagem?: string;
   usuario?: string | null;
+  codigo?: string;
+  operacao?: string;
   dados?: any;
 }
 
@@ -107,7 +121,7 @@ export class Revendedora implements OnInit {
 
   tela = 'carregando';
 
-  aba = 'modelos';
+  aba = 'veiculos';
   admin = false;
   usuarios: UsuarioCadastrado[] = [];
   candidaturas: Candidatura[] = [];
@@ -138,7 +152,7 @@ export class Revendedora implements OnInit {
 
   // Formulários dos acessórios e dos carros
   novoAcessorio = '';
-  novoCarro = { placa: '', chassi: '', cor: '', ano: '', valor: '', quilometragem: '', situacao: '', id_modelo: '' };
+  novoCarro = { ano_modelo_texto: '', placa: '', chassi: '', cor: '', valor: '', quilometragem: '', situacao: '', id_modelo: '' };
   vinculo = { id_carro: '', id_acessorio: '' };
 
   // Formulário Trabalhe conosco
@@ -212,13 +226,13 @@ export class Revendedora implements OnInit {
     if (erro.status === 401) {
       // acaba  sessão
       this.irPara('login');
-      this.erro = 'Sua sessão terminou. Faça login novamente.';
+      this.erro = this.mensagemErro(erro.error ?? {mensagem:'Sua sessão terminou. Faça login novamente.',codigo:'REV-SESSAO-401'});
     } else if (erro.error && typeof erro.error.mensagem === 'string') {
-      this.erro = erro.error.mensagem;
+      this.erro = this.mensagemErro(erro.error);
     } else if (erro.status === 0) {
-      this.erro = 'A API não respondeu. Confira o Apache, o endereço localhost:4200 e a pasta api-revendedora no htdocs.';
+      this.erro = 'Não foi possível conectar. Confira se o sistema está ligado e tente novamente. Código: REV-CONEXAO.';
     } else {
-      this.erro = 'A API retornou uma resposta inválida. Confira o api.php e o log de erros do Apache.';
+      this.erro = 'Não foi possível concluir. Tente novamente ou informe o código ao responsável. Código: REV-RESPOSTA.';
     }
 
     this.atualizar();
@@ -233,6 +247,7 @@ export class Revendedora implements OnInit {
     this.fecharLog();
     this.cancelarExclusao();
     if (tela !== 'principal') {
+      this.carroVisualizado=null;
       this.admin = false;
       this.usuario = '';
       this.usuarios = [];
@@ -255,7 +270,7 @@ export class Revendedora implements OnInit {
     this.novoAcessorio = '';
     this.limparCarro();
     this.limparVinculo();
-    this.aba = 'modelos';
+    this.aba = 'veiculos';
     this.msg = '';
     this.erro = '';
     this.cadastrado = false;
@@ -284,6 +299,10 @@ export class Revendedora implements OnInit {
     this.fecharLog();
     this.cancelarExclusao();
     this.aba = aba;
+    this.busca = '';
+    this.idEdicaoModelo=null;this.idEdicaoMarca=null;this.idEdicaoAcessorio=null;
+    this.carroVisualizado = null;
+    this.idEdicaoCarro = null;
     if (aba === 'usuarios') this.carregarUsuarios();
     if (aba === 'candidaturas') this.carregarCandidaturas();
     this.modelo = '';
@@ -298,7 +317,9 @@ export class Revendedora implements OnInit {
     this.msg = '';
     this.erro = '';
 
-    if (aba === 'marcas') {
+    if (this.paginaVeiculos) {
+      this.tituloPagina.setTitle(this.tituloVeiculos);
+    } else if (aba === 'marcas') {
       this.tituloPagina.setTitle('Cadastro de marca');
     } else if (aba === 'acessorios') {
       this.tituloPagina.setTitle('Cadastro de acessório');
@@ -332,7 +353,7 @@ export class Revendedora implements OnInit {
         } else {
           this.login = '';
           this.senha = '';
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
           this.atualizar();
         }
       },
@@ -354,7 +375,7 @@ export class Revendedora implements OnInit {
         } else {
           this.login = '';
           this.senha = '';
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -381,7 +402,7 @@ export class Revendedora implements OnInit {
           form.resetForm();
           this.limparCandidato();
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -433,16 +454,16 @@ export class Revendedora implements OnInit {
     this.msg = '';
     this.erro = '';
 
-    const dados = { nome: this.novaMarca };
+    const dados = { nome: this.novaMarca, id_marca: this.idEdicaoMarca };
 
-    this.post('marca', dados).subscribe({
+    this.post(this.idEdicaoMarca ? 'editar_marca' : 'marca', dados).subscribe({
       next: (resposta) => {
         if (resposta.sucesso) {
           this.msg = resposta.mensagem ?? 'Marca cadastrada!';
-          this.novaMarca = '';
+          this.novaMarca = ''; this.idEdicaoMarca = null;
           this.carregarMarcas();
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -478,7 +499,7 @@ export class Revendedora implements OnInit {
         if (resposta.sucesso) {
           this.msg = resposta.mensagem ?? 'Senha alterada com sucesso.';
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
 
         this.senhaAtual = '';
@@ -523,16 +544,15 @@ export class Revendedora implements OnInit {
 
     const dados = { modelo: this.modelo, id_marca: this.idMarca };
 
-    this.post('modelo', dados).subscribe({
+    this.post(this.idEdicaoModelo ? 'editar_modelo' : 'modelo', { ...dados, id_modelo: this.idEdicaoModelo }).subscribe({
       next: (resposta) => {
         if (resposta.sucesso) {
           this.msg = resposta.mensagem ?? 'Modelo cadastrado!';
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
 
-        this.modelo = '';
-        this.idMarca = '';
+        if (resposta.sucesso) { this.modelo = ''; this.idMarca = ''; this.idEdicaoModelo = null; }
 
         this.carregarModelos();
         this.atualizar();
@@ -559,16 +579,16 @@ export class Revendedora implements OnInit {
     this.msg = '';
     this.erro = '';
 
-    const dados = { nome: this.novoAcessorio };
+    const dados = { nome: this.novoAcessorio, id_acessorio: this.idEdicaoAcessorio };
 
-    this.post('acessorio', dados).subscribe({
+    this.post(this.idEdicaoAcessorio ? 'editar_acessorio' : 'acessorio', dados).subscribe({
       next: (resposta) => {
         if (resposta.sucesso) {
           this.msg = resposta.mensagem ?? 'Acessório cadastrado!';
-          this.novoAcessorio = '';
+          this.novoAcessorio = ''; this.idEdicaoAcessorio = null;
           this.carregarAcessorios();
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -596,7 +616,7 @@ export class Revendedora implements OnInit {
 
   // Zera os campos do carro
   limparCarro(): void {
-    this.novoCarro = { placa: '', chassi: '', cor: '', ano: '', valor: '', quilometragem: '', situacao: '', id_modelo: '' };
+    this.novoCarro = { ano_modelo_texto: '', placa: '', chassi: '', cor: '', valor: '', quilometragem: '', situacao: '', id_modelo: '' };
   }
 
   // Salva o carro (o PHP confere tudo de novo)
@@ -604,7 +624,8 @@ export class Revendedora implements OnInit {
     this.msg = '';
     this.erro = '';
 
-    this.post('carro', this.novoCarro).subscribe({
+    const vendido = this.idEdicaoCarro !== null && this.novoCarro.situacao === 'V';
+    this.post(this.idEdicaoCarro ? 'editar_carro' : 'carro', { ...this.novoCarro, id_carro: this.idEdicaoCarro }).subscribe({
       next: (resposta) => {
         if (resposta.sucesso) {
           this.msg = resposta.mensagem ?? 'Carro cadastrado!';
@@ -612,9 +633,15 @@ export class Revendedora implements OnInit {
           // limpa o formulário e os avisos de campo obrigatório
           form.resetForm();
           this.limparCarro();
+          this.idEdicaoCarro = null;
           this.carregarCarros();
+          this.carregarVinculos();
+          this.aba = vendido ? 'vendidos' : 'veiculos';
+          this.busca = '';
+          this.carroVisualizado = null;
+          this.tituloPagina.setTitle(this.tituloVeiculos);
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -656,10 +683,10 @@ export class Revendedora implements OnInit {
       next: (resposta) => {
         if (resposta.sucesso) {
           this.msg = resposta.mensagem ?? 'Acessório colocado no carro!';
-          this.limparVinculo();
           this.carregarVinculos();
+          this.carregarCarros();
         } else {
-          this.erro = resposta.mensagem ?? '';
+          this.erro = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -727,7 +754,7 @@ export class Revendedora implements OnInit {
           if (this.aba === 'usuarios') this.carregarUsuarios();
           if (this.aba === 'candidaturas') this.carregarCandidaturas();
         } else {
-          this.erroExclusao = resposta.mensagem ?? 'Não foi possível excluir.';
+          this.erroExclusao = this.mensagemErro(resposta);
         }
         this.atualizar();
       },
@@ -751,7 +778,7 @@ export class Revendedora implements OnInit {
   }
 
   get categoriaLog(): string {
-    return this.aba === 'logs' ? 'geral' : this.aba;
+    return this.aba === 'logs' ? 'geral' : (this.paginaVeiculos ? 'carros' : this.aba);
   }
 
   fecharLog(): void {
@@ -804,11 +831,11 @@ export class Revendedora implements OnInit {
 
   private conteudoCsv(): string {
     const cabecalho = ['Número', 'Data e hora (Brasília)', 'Usuário', 'Categoria', 'Ação', 'Descrição'];
-    if (this.admin) cabecalho.push('Detalhes', 'IP', 'Navegador');
+    if (this.podeGerenciar) cabecalho.push('Detalhes');
     const linhas: string[][] = [cabecalho];
     for (const log of this.registrosLog) {
       const linha = [String(log.id_log), log.data_hora, log.usuario, log.categoria, log.acao, log.resumo];
-      if (this.admin) linha.push(log.detalhes ?? '', log.ip ?? '', log.navegador ?? '');
+      if (this.podeGerenciar) linha.push(this.detalhesCampos(log).map(c => c.rotulo + ': ' + c.valor).join(' | '));
       linhas.push(linha);
     }
     // Aspas preservam ponto e vírgula e quebras de linha. O apóstrofo evita fórmulas no Excel.
@@ -849,5 +876,46 @@ export class Revendedora implements OnInit {
     }
     this.atualizar();
   }
+
+
+  idEdicaoCarro: number | null = null;
+  idEdicaoModelo: number | null = null;
+  idEdicaoMarca: number | null = null;
+  idEdicaoAcessorio: number | null = null;
+  carroVisualizado: Carro | null = null;
+  busca = '';
+  menuAberto = false;
+  gruposMenu: {nome:string; itens:{id:string;nome:string;admin?:boolean}[]}[] = [
+    {nome:'Carros',itens:[{id:'carros',nome:'Cadastrar veículos'},{id:'vinculos',nome:'Veículo/Acessórios'},{id:'veiculos',nome:'Veículos cadastrados'},{id:'vendidos',nome:'Veículos vendidos'}]},
+    {nome:'Cadastros',itens:[{id:'marcas',nome:'Marcas'},{id:'modelos',nome:'Modelos'},{id:'acessorios',nome:'Acessórios'}]},
+    {nome:'Administração',itens:[{id:'usuarios',nome:'Usuários',admin:true},{id:'conta',nome:'Senha e histórico',admin:true},{id:'candidaturas',nome:'Candidaturas',admin:true},{id:'logs',nome:'Logs gerais',admin:true}]},
+    {nome:'Minha conta',itens:[{id:'conta',nome:'Senha e histórico'}]}
+  ];
+  get paginaVeiculos(): boolean { return this.aba === 'veiculos' || this.aba === 'vendidos'; }
+  get tituloVeiculos(): string { return this.aba === 'vendidos' ? 'Veículos vendidos' : 'Veículos cadastrados'; }
+  get usuariosFiltrados(): UsuarioCadastrado[] { return this.usuarios.filter(u => this.corresponde(u.login)); }
+  get candidaturasFiltradas(): Candidatura[] { return this.candidaturas.filter(c => this.corresponde(c.nome + ' ' + c.email)); }
+  get podeGerenciar(): boolean { return this.admin; }
+  get modelosDisponiveis(): ModeloCadastrado[] { return this.lista; }
+  get carroDoVinculo(): Carro | undefined { return this.carros.find(c => String(c.id_carro) === this.vinculo.id_carro); }
+  corresponde(texto: unknown): boolean { return String(texto ?? '').toLocaleLowerCase().includes(this.busca.toLocaleLowerCase().trim()); }
+  get carrosFiltrados(): Carro[] { return this.carros.filter(c => (!this.paginaVeiculos || c.situacao === (this.aba === 'vendidos' ? 'V' : 'D')) && this.corresponde(c.id_carro + ' ' + c.placa + ' ' + c.marca + ' ' + c.modelo)); }
+  get modelosFiltrados(): ModeloCadastrado[] { return this.lista.filter(m => this.corresponde(m.id_modelo + ' ' + m.modelo + ' ' + m.marca + ' ' + m.proprietario)); }
+  get marcasFiltradas(): Marca[] { return this.marcas.filter(m => this.corresponde(m.id_marca + ' ' + m.nome)); }
+  get acessoriosFiltrados(): Acessorio[] { return this.acessorios.filter(a => this.corresponde(a.id_acessorio + ' ' + a.nome)); }
+  mensagemErro(resposta: Resposta): string { return (resposta.mensagem ?? 'Não foi possível concluir.') + (resposta.codigo ? ' Código: ' + resposta.codigo : '') + (this.admin && resposta.operacao ? ' Operação: ' + resposta.operacao + '.' : ''); }
+  detalhesCampos(log: RegistroLog): { rotulo: string; valor: string }[] {
+    try { return Object.entries(JSON.parse(log.detalhes ?? '{}')).filter(([,v]) => typeof v === 'string' || typeof v === 'number').map(([rotulo,valor]) => ({rotulo, valor:String(valor)})); }
+    catch { return [{rotulo:'Operação',valor:log.resumo}]; }
+  }
+  editarCarro(c: Carro): void {
+    if (!c.pode_editar) return;
+    this.aba='carros'; this.idEdicaoCarro=c.id_carro;
+    this.novoCarro={ placa:c.placa,chassi:c.chassi,cor:c.cor,ano_modelo_texto:c.ano_modelo ? c.ano + '/' + c.ano_modelo : '',valor:String(c.valor_numerico),quilometragem:String(c.quilometragem),situacao:c.situacao,id_modelo:String(c.id_modelo) };
+    this.msg='';this.erro='';this.carroVisualizado=null;
+  }
+  editarModelo(m: ModeloCadastrado): void { this.idEdicaoModelo=m.id_modelo;this.modelo=m.modelo;this.idMarca=String(m.id_marca); }
+  editarMarca(m: Marca): void { this.idEdicaoMarca=m.id_marca;this.novaMarca=m.nome; }
+  editarAcessorio(a: Acessorio): void { this.idEdicaoAcessorio=a.id_acessorio;this.novoAcessorio=a.nome; }
 
 }
