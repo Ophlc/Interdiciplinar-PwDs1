@@ -1,4 +1,4 @@
-# Interdisciplinar Angular versão 8 — Revendedora de Carros
+# Interdisciplinar Angular versão 9 — Revendedora de Carros
 
 ## Sobre o projeto
 
@@ -6,9 +6,44 @@ Este projeto foi desenvolvido como parte de uma atividade interdisciplinar das d
 
 A aplicação permite cadastrar marcas, modelos, veículos e acessórios, consultar os carros disponíveis e vendidos e acompanhar as atividades realizadas pelos usuários.
 
-Na versão 8, a navegação passou a utilizar uma barra lateral. Também foram adicionadas a edição de veículos, a separação dos vendidos, a caixa única Ano/Modelo e a organização dos acessórios com seus identificadores.
+A versão 9 renova a apresentação do sistema com preto, branco, grafite e detalhes em roxo. O foco desta entrega está no CSS: cores, tipografia, espaçamento, formulários, botões e tabelas receberam um novo acabamento, preservando as funcionalidades da versão 8.
 
-O sistema utiliza Angular no Front-End, PHP no Back-End e MySQL para armazenar os dados. O funcionamento é único, sem necessidade de cadastrar lojas ou vincular funcionários.
+O ZIP `InterdiciplinarAngular9.zip` é a referência desta versão. Nele, `revendedora.html`, `revendedora.ts`, a API PHP e `banco.sql` permanecem iguais aos da versão 8. Não há novas regras de negócio ou migração de banco para aplicar o tema.
+
+## O que mudou da versão 8 para a versão 9
+
+| Elemento | Versão 8 — v10.0.0 | Versão 9 — v11.0.0 |
+|---|---|---|
+| Identidade visual | Predomínio de preto, branco e cinza. | Base preservada, com destaques em roxo `#7d18cf` e roxo escuro `#470f75`. |
+| Tipografia | Títulos em Impact e textos em Arial. | Fonte Segoe UI, com alternativas locais, e nova hierarquia de tamanhos e pesos. |
+| Cartões | Caixas com cantos retos e borda superior marcada. | Cantos arredondados, bordas suaves, sombras discretas e mais espaço interno. |
+| Formulários | Campos com acabamento simples. | Campos arredondados, espaçamento maior e foco destacado em roxo. |
+| Botões | Botões escuros com texto em maiúsculas. | Acabamento arredondado, estados de interação e ações de exclusão com tratamento vermelho próprio. |
+| Barra lateral | Menu preto com seleção em cinza. | Menu em grafite, seleção em roxo e melhor espaçamento entre opções. |
+| Tabelas | Grade com bordas em todas as células. | Contorno arredondado, linhas mais leves e destaque suave ao passar o mouse. |
+| Acesso ao sistema | Logo acima do formulário. | Logo original preservada, com formulário mais amplo e cartão sobreposto à base do cabeçalho. |
+| Celular e acessibilidade | Menu expansível e adaptação básica. | Ajustes de espaçamento, foco visível para teclado e respeito à preferência por movimento reduzido. |
+
+A barra lateral continua à esquerda e acompanha a altura completa da página. A ordem dos menus, as permissões, a confirmação de exclusões, a separação entre disponíveis e vendidos e a exportação dos logs continuam funcionando como antes.
+
+## Como aplicar apenas a atualização visual
+
+Se a versão 8 já está funcionando, substitua somente:
+
+```text
+src/app/revendedora/revendedora.css
+```
+
+Salve e recarregue a página; se necessário, use **Ctrl+F5**. Não é necessário executar SQL, reinstalar dependências nem alterar a API ou a configuração local de conexão.
+
+As cores principais ficam no início do CSS:
+
+```css
+--cobre: #7d18cf;
+--cobre-escuro: #470f75;
+```
+
+Os nomes das variáveis foram mantidos por compatibilidade com o tema anterior; seus valores agora são roxos. A logo original continua sendo utilizada, sem fontes ou bibliotecas visuais externas.
 
 ## Tecnologias utilizadas
 
@@ -300,4 +335,4 @@ A autenticação usa sessões PHP. As senhas são armazenadas com `password_hash
 
 **Desenvolvido por System of &lt;Devs&gt;**
 
-Projeto Interdisciplinar — Angular, versão 8.
+Projeto Interdisciplinar — Angular, versão 9. Release: `v11.0.0 — InterdiciplinarAngular9`.
