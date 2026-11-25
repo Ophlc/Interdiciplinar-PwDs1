@@ -1,335 +1,393 @@
+/* Identidade visual: preto e branco da logo, grafite e detalhes em roxo. */
+:root {
+  --fundo: #f1f2f4;
+  --superficie: #fff;
+  --texto: #24262b;
+  --texto-suave: #656a73;
+  --borda: #dfe2e6;
+  --grafite: #202126;
+  --cobre: #7d18cf;
+  --cobre-escuro: #470f75;
+  --erro: #a83437;
+  --sombra: 0 6px 24px rgb(24 27 33 / 5%);
+}
+
 * { box-sizing: border-box; }
 
 body {
   min-height: 100vh;
   margin: 0;
-  background: #e3e3e3;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
   font-size: 15px;
-  line-height: 1.4;
-  color: #222;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
-body::after {
-  content: 'System of <Devs>';
-  display: block;
-  padding: 10px 0 30px;
+body::after, .rodape-sistema {
+  padding: 22px 12px 30px;
+  color: #707580;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #888;
 }
+body::after { content: 'System of <Devs>'; display: block; }
 
 h1, h2 {
-  margin: 0 0 18px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ddd;
-  font-family: Impact, 'Arial Narrow', sans-serif;
-  font-weight: normal;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #111;
+  margin: 0 0 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eceef0;
+  color: #202126;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
 }
-h1 { font-size: 26px; }
+h1 { font-size: 25px; }
 h2 { font-size: 20px; }
+p { margin: 0 0 18px; }
+p:last-child { margin-bottom: 0; }
+a { color: var(--cobre-escuro); text-underline-offset: 3px; }
+a:hover { color: #470f75; }
+a, button, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--cobre);
+  outline-offset: 4px;
+}
 
-a { color: #111; }
-
-
+/* A imagem original é preservada, com espaço próprio no cabeçalho. */
 .logo-grande {
-  height: 230px;
-  background: #050505 url('logo.png') center / auto 195px no-repeat;
-  border-bottom: 4px solid #666;
+  height: 220px;
+  background: #050505 url('logo.png') center 26px / auto 148px no-repeat;
+  border-bottom: 3px solid var(--cobre);
 }
-
 .logo-pequeno {
-  width: 47px;
-  height: 40px;
-  background: url('logo.png') center / contain no-repeat;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 46px;
+  background: #050505 url('logo.png') center / contain no-repeat;
 }
-
-
 .topo {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px 24px;
-  padding: 8px 25px;
+  justify-content: space-between;
+  gap: 16px 28px;
+  min-height: 78px;
+  padding: 13px 28px;
+  border-bottom: 2px solid var(--cobre);
   background: #050505;
-  color: #fff;
-  border-bottom: 4px solid #666;
+  color: #c6c8cd;
+  font-size: 13px;
 }
-.topo a { color: #fff; }
-.topo a:hover { color: #ccc; }
-
+.topo b { color: #fff; font-weight: 600; }
+.topo a { margin-left: 5px; color: #7d18cf; }
+.topo a:hover { color: #fff; }
 .nome-sistema {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-family: Impact, 'Arial Narrow', sans-serif;
-  font-size: 19px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-
-.abas {
-  width: calc(100% - 20px);
-  max-width: 420px;
-  margin: 30px auto 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-}
-.abas a {
-  min-height: 40px;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: #c9c9c9;
-  color: #444;
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 12px;
-  font-weight: bold;
-}
-.abas a:hover { background: #b5b5b5; }
-.abas a.ativa {
-  background: #111;
+  gap: 16px;
   color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
 }
-.abas + .caixa { margin-top: 0; }
 
-
+/* Cartões e telas públicas. */
 .caixa {
-  width: calc(100% - 20px);
-  max-width: 420px;
-  margin: 30px auto;
-  padding: 22px;
-  background: #fff;
-  border: 1px solid #bdbdbd;
-  border-top: 4px solid #111;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  width: calc(100% - 32px);
+  max-width: 460px;
+  margin: 28px auto;
+  padding: 28px;
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--grafite);
+  border-radius: 12px;
+  background: var(--superficie);
+  box-shadow: var(--sombra);
 }
+.logo-grande + .caixa { position: relative; margin-top: -25px; padding: 32px; }
+.logo-grande + .caixa h1 { margin-bottom: 24px; }
+.logo-grande + .caixa form > a { display: inline-block; margin-left: 10px; }
+.logo-grande + .caixa > p { margin-top: 20px; color: var(--texto-suave); font-size: 14px; }
+.texto-intro { margin: 0 0 22px; color: var(--texto-suave); }
 
-.perigo {
-  border-color: #d9a5a2;
-  border-top-color: #a32a24;
-}
-.perigo button { margin-right: 8px; }
-.perigo button.excluir {
-  padding: 8px 18px;
-  font-size: 13px;
-}
-
-
+/* Campos mantêm suas validações e os tamanhos necessários para preenchimento. */
 label {
   display: block;
-  margin-bottom: 14px;
-  font-size: 13px;
-  font-weight: bold;
+  margin-bottom: 20px;
+  color: #42464e;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #333;
 }
-input, select {
+input, select, textarea {
   display: block;
   width: 100%;
-  min-height: 42px;
-  margin-top: 4px;
-  padding: 8px;
-  font-size: 16px;
-  text-transform: none;
+  min-height: 46px;
+  margin-top: 7px;
+  padding: 11px 13px;
+  border: 1px solid #cfd3d9;
+  border-radius: 7px;
+  background: #fcfcfd;
+  color: var(--texto);
+  font: 400 15px/1.4 'Segoe UI', Arial, sans-serif;
   letter-spacing: normal;
-  font-weight: normal;
-  background: #fafafa;
-  border: 1px solid #999;
+  text-transform: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
-input:focus, select:focus {
+select { padding-right: 28px; cursor: pointer; }
+input::placeholder, textarea::placeholder { color: #7c8189; opacity: 1; }
+input:hover, select:hover, textarea:hover { border-color: #a4aab4; }
+input:focus, select:focus, textarea:focus {
   outline: none;
+  border-color: #7d18cf;
   background: #fff;
-  border-color: #111;
-  box-shadow: 0 0 0 2px #bbb;
+  box-shadow: 0 0 0 3px rgb(125 24 207 / 16%);
 }
+input:disabled, select:disabled, textarea:disabled { background: #eceef0; color: var(--texto-suave); }
+textarea { min-height: 120px; font-family: Consolas, monospace; font-size: 13px; resize: vertical; }
+.linha { display: flex; gap: 18px; }
+.linha label { flex: 1; min-width: 0; }
+.linha label.estreito { flex: 0 0 100px; }
+.campo-erro, .campo-ajuda {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.campo-erro { color: var(--erro); }
+.campo-ajuda { color: var(--texto-suave); }
 
+/* Botões principais, ações de tabela e exclusão permanecem distintos. */
 button {
-  padding: 8px 18px;
-  font-size: 13px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border: 1px solid #000;
-  background: #111;
+  min-height: 40px;
+  padding: 10px 18px;
+  border: 1px solid var(--grafite);
+  border-radius: 7px;
+  background: var(--grafite);
   color: #fff;
+  font: 600 12px/1.4 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
-button:hover { background: #3a3a3a; }
-
+button:hover:not(:disabled) {
+  border-color: #44464d;
+  background: #383a42;
+  box-shadow: 0 3px 9px rgb(24 27 33 / 12%);
+}
+button:active:not(:disabled) { background: #15161a; }
+button:disabled { opacity: 0.42; cursor: not-allowed; }
 button.excluir {
-  padding: 4px 10px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-color: #ecd1d2;
+  background: #fbefef;
+  color: #982e32;
   font-size: 11px;
-  border: 1px solid #7d1f1a;
-  background: #a32a24;
 }
-button.excluir:hover { background: #7d1f1a; }
+button.excluir:hover:not(:disabled) { border-color: #a83437; background: #a83437; color: #fff; }
+.perigo { border-color: #e6c7c8; border-top-color: var(--erro); }
+.perigo button { margin-right: 8px; margin-bottom: 6px; }
+.perigo button.excluir { min-height: 40px; padding: 10px 18px; font-size: 12px; }
 
-button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-
-/* Mensagens */
+/* Mensagens de sucesso e erro, inclusive os botões para fechar avisos. */
 .aviso {
-  padding: 9px 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding: 13px 16px;
   border: 1px solid;
-  border-left-width: 5px;
+  border-left-width: 4px;
+  border-radius: 7px;
+  font-size: 14px;
 }
-.ok { background: #eaf4ea; border-color: #5a9a5a; color: #1f4a1f; }
-.erro { background: #fbeaea; border-color: #c25a5a; color: #6b1d1d; }
+.ok { border-color: #b9d9c9; border-left-color: #3b8762; background: #edf7f1; color: #266144; }
+.erro { border-color: #e7c3c4; border-left-color: var(--erro); background: #fdf0f0; color: #8d2d32; }
+.notificacao { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.notificacao button {
+  flex: 0 0 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 23px;
+}
+.notificacao button:hover:not(:disabled) { background: rgb(0 0 0 / 5%); box-shadow: none; }
 
-
-/* Tabelas */
+/* Tabelas roláveis sem cortar informações em telas menores. */
 .tabela-responsiva {
   width: 100%;
   overflow-x: auto;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
   -webkit-overflow-scrolling: touch;
 }
-table { width: 100%; min-width: 280px; border-collapse: collapse; }
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px 10px;
-  text-align: left;
-  white-space: nowrap;
-}
+table { width: 100%; min-width: 280px; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 13px 16px; border-bottom: 1px solid #e7e9ed; text-align: left; white-space: nowrap; }
 th {
-  background: #222;
-  border-color: #222;
-  color: #fff;
-  font-size: 12px;
+  background: var(--grafite);
+  color: #f3f3f5;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
+}
+tbody tr:last-child > td { border-bottom: 0; }
+tbody tr:nth-child(even) > td { background: #f8f9fa; }
+tbody tr:hover > td { background: rgb(125 24 207 / 4%); }
+.acoes-tabela { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.acoes-tabela button[aria-label] {
+  min-width: 36px;
+  min-height: 34px;
+  padding: 3px 8px;
+  border-color: #d8dce2;
+  background: #fff;
+  color: var(--texto);
+  font-size: 18px;
+  line-height: 1.2;
+}
+.acoes-tabela button[aria-label]:hover { border-color: var(--cobre); background: rgb(125 24 207 / 7%); box-shadow: none; }
+.acessorios-do-veiculo { min-width: 220px; margin: 0; font-size: 13px; }
+.acessorios-do-veiculo th { background: #e9ebee; color: #4d535d; }
+.acessorios-do-veiculo th, .acessorios-do-veiculo td { padding: 8px 12px; }
+.acessorios-do-veiculo th:first-child, .acessorios-do-veiculo td:first-child { width: 65px; }
+.acessorios-do-veiculo td { white-space: normal; }
+
+/* Navegação acompanha toda a altura da página, incluindo o rodapé. */
+.sistema-logado { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+.sistema-logado > .topo { flex: none; }
+.layout-sistema {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  width: 100%;
+  margin: 0;
+}
+.sistema-logado > .layout-sistema { flex: 1; min-height: 0; align-items: stretch; }
+.menu-lateral {
+  padding: 24px 14px;
+  border-right: 1px solid #303138;
+  background: #18191d;
+  color: #fff;
+  font-size: 13px;
+}
+.menu-lateral details { margin-bottom: 16px; }
+.menu-lateral summary {
+  padding: 10px 12px;
+  color: #c3c6ce;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
 }
-tr:nth-child(even) td { background: #f5f5f5; }
-tr:hover td { background: #e9e9e9; }
-
-/* Formulário Trabalhe conosco */
-.texto-intro { margin: 0 0 16px; color: #555; }
-
-.linha { display: flex; gap: 12px; }
-.linha label { flex: 1; min-width: 0; }
-.linha label.estreito { flex: 0 0 100px; }
-
-.campo-erro, .campo-ajuda {
+.menu-lateral summary::marker { color: var(--cobre); font-size: 10px; }
+.menu-lateral summary:hover { color: #fff; }
+.menu-lateral a {
   display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  font-weight: normal;
-  letter-spacing: normal;
-  text-transform: none;
+  margin: 3px 0;
+  padding: 11px 13px;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  color: #c9ccd3;
+  font-weight: 400;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: background 150ms ease, color 150ms ease;
 }
-.campo-erro { color: #a32a24; }
-.campo-ajuda { color: #777; }
+.menu-lateral a:hover { background: #282a31; color: #fff; }
+.menu-lateral a.ativa { border-left-color: var(--cobre); background: #470f75; color: #fff; font-weight: 600; }
+.menu-lateral > a { margin-top: 20px; color: #b8bbc3; }
+.menu-movel { display: none; }
+.conteudo-sistema { display: flex; flex-direction: column; min-width: 0; padding: 0 36px; }
+.conteudo-sistema .caixa { width: 100%; max-width: 1040px; }
+.conteudo-sistema .caixa + .caixa { margin-top: 0; }
+.mensagens { width: 100%; max-width: 1040px; margin: 0 auto; }
+.mensagens:not(:empty) { padding-top: 24px; }
+.mensagens .aviso:last-child { margin-bottom: 0; }
+.rodape-sistema { margin-top: auto; }
+body:has(.sistema-logado)::after { display: none; }
+.filtros { display: flex; flex-wrap: wrap; gap: 18px; border-top-color: var(--cobre); }
+.filtros label { flex: 1; min-width: 170px; margin: 0; }
+.contexto-loja { margin: 24px 0 16px; }
+.contexto-loja > label { max-width: 420px; }
 
-/* Tela principal mais larga, porque agora tem mais abas e tabelas */
-.abas, .abas ~ .caixa { max-width: 880px; }
-.abas { grid-template-columns: repeat(6, 1fr); }
-
-/* células mais juntinhas pra tabela dos carros caber melhor */
-.abas ~ .caixa th, .abas ~ .caixa td { padding: 8px; }
-
-
-@media (max-width: 600px) {
-  .topo {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 12px 10px;
-  }
-
-  .topo > span:last-child {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-
-  .nome-sistema { font-size: 16px; }
-  .caixa { padding: 16px; margin-top: 20px; margin-bottom: 20px; }
-  .abas { margin-top: 20px; }
-  .logo-grande { height: 170px; background-size: auto 140px; }
-  h1 { font-size: 22px; }
-  h2 { font-size: 18px; }
-}
-
-@media (max-width: 380px) {
-  .abas a {
-    font-size: 10px;
-    letter-spacing: 0;
-  }
-
-  .perigo button {
-    width: 100%;
-    margin: 0 0 8px;
-  }
-}
-
-@media (max-width: 760px) {
-  .abas { grid-template-columns: repeat(3, 1fr); }
-}
-
-/* Mantém as novas telas no mesmo estilo das caixas e tabelas. */
-.abas.abas-admin { grid-template-columns: repeat(3, 1fr); }
-.acoes-log { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
-.painel-log .resumo-log { white-space: normal; min-width: 180px; }
+/* Detalhes do veículo e dos registros de log. */
+.dados-veiculo { display: grid; grid-template-columns: 175px minmax(0, 1fr); gap: 0 20px; margin: 0 0 22px; }
+dt { padding: 9px 0; color: #555b65; font-size: 13px; font-weight: 600; }
+dd { margin: 0; padding: 9px 0; overflow-wrap: anywhere; }
+.dados-veiculo dt, .dados-veiculo dd { border-bottom: 1px solid #eceef0; }
+.dados-veiculo dd > div + div { margin-top: 6px; }
+.acoes-log { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.painel-log .resumo-log { min-width: 180px; white-space: normal; }
 .painel-log details { min-width: 180px; max-width: 350px; white-space: normal; overflow-wrap: anywhere; }
-.painel-log summary { cursor: pointer; text-decoration: underline; }
-.painel-log pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow-y: auto; font-size: 12px; }
-.senha-hash { min-width: 160px; max-width: 300px; white-space: normal; overflow-wrap: anywhere; }
-textarea { display: block; width: 100%; min-height: 120px; padding: 8px; border: 1px solid #999; font: 13px monospace; }
+.painel-log summary { color: var(--cobre-escuro); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.painel-log dl { margin: 12px 0 0; }
+.painel-log dt { padding-bottom: 0; }
+.painel-log dd { padding-top: 3px; white-space: normal; }
+.painel-log pre { max-height: 280px; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.senha-hash { min-width: 160px; max-width: 300px; color: var(--texto-suave); font: 12px/1.6 Consolas, monospace; white-space: normal; overflow-wrap: anywhere; }
 
-/* Navegação lateral, com as mesmas cores e caixas da versão anterior. */
-.layout-sistema { display:grid; grid-template-columns:230px minmax(0,1fr); width:100%; max-width:none; margin:0; min-height:85vh; }
-.menu-lateral { background:#111; color:#fff; padding:18px 12px; }
-.menu-lateral details { margin-bottom:12px; }
-.menu-lateral summary { cursor:pointer; padding:10px 4px; color:#ddd; font-weight:bold; }
-.menu-lateral a { display:block; padding:10px; color:#ddd; text-decoration:none; border-left:3px solid transparent; }
-.menu-lateral a:hover,.menu-lateral a.ativa { background:#333; color:#fff; border-color:#ddd; }
-.menu-movel { display:none; }
-.conteudo-sistema { min-width:0; padding:0 20px 30px; }
-.conteudo-sistema .caixa { max-width:1100px; width:100%; }
-.contexto-loja { margin-top:24px; }
-.contexto-loja>label { max-width:420px; }
-.filtros { display:flex; gap:12px; flex-wrap:wrap; }
-.filtros label { flex:1; min-width:170px; margin:0; }
-.acoes-tabela { display:flex; flex-wrap:wrap; gap:6px; }
-.dados-veiculo { display:grid; grid-template-columns:180px minmax(0,1fr); gap:8px; }
-dt { font-weight:bold; } dd { margin:0 0 10px; overflow-wrap:anywhere; }
-.painel-log dd { white-space:normal; }
-@media(max-width:760px) {
- .layout-sistema { display:block; }.menu-movel { display:block; }.menu-lateral details,.menu-lateral>a { display:none; }.menu-lateral.menu-aberto details,.menu-lateral.menu-aberto>a { display:block; }.conteudo-sistema { padding:0 10px 20px; }.linha { flex-wrap:wrap; }.linha label { min-width:130px; }.dados-veiculo { grid-template-columns:1fr; }
+/* Compatibilidade visual com os componentes de abas existentes. */
+.abas { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: calc(100% - 32px); max-width: 1040px; margin: 28px auto 0; }
+.abas a { display: flex; align-items: center; justify-content: center; min-height: 42px; padding: 8px; border-radius: 7px; background: #e1e4e8; color: #454b55; text-align: center; text-decoration: none; font-size: 12px; }
+.abas a:hover { background: #d5d9df; }
+.abas a.ativa { background: var(--grafite); color: #fff; }
+.abas + .caixa { margin-top: 8px; }
+.abas ~ .caixa { max-width: 1040px; }
+.abas.abas-admin { grid-template-columns: repeat(3, 1fr); }
+
+/* O botão de menu e os grupos seguem o comportamento original no celular. */
+@media (max-width: 1000px) {
+  .layout-sistema { grid-template-columns: 215px minmax(0, 1fr); }
+  .conteudo-sistema { padding: 0 24px; }
+  .caixa { padding: 24px; }
 }
-
-/* 8.1: navegação compacta, formulários e cores da versão 7. */
-.layout-sistema { grid-template-columns:190px minmax(0,1fr); }
-.menu-lateral { font-size:13px; }.menu-lateral a { padding:8px; }.menu-lateral summary { padding:8px 4px; }
-.conteudo-sistema .caixa { max-width:880px; }.contexto-loja { margin-bottom:16px; }
-.acoes-tabela button[aria-label] { min-width:38px; min-height:34px; font-size:18px; padding:3px 8px; }
-@media(max-width:760px) { .layout-sistema { display:block; } }
-
-.notificacao { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.notificacao button { padding:2px 8px; font-size:20px; background:transparent; color:inherit; border:0; }
-
-.acessorios-do-veiculo { min-width:220px; margin:0; }
-.acessorios-do-veiculo th:first-child,.acessorios-do-veiculo td:first-child { width:65px; }
-.acessorios-do-veiculo td { white-space:normal; }
-
-/* O rodapé faz parte do conteúdo para a lateral acompanhar toda a página. */
-.sistema-logado { display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; }
-.sistema-logado > .topo { flex:none; }
-.sistema-logado > .layout-sistema { flex:1; min-height:0; align-items:stretch; }
-.sistema-logado .conteudo-sistema { display:flex; flex-direction:column; padding-bottom:0; }
-.rodape-sistema { margin-top:auto; padding:10px 0 30px; text-align:center; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; }
-body:has(.sistema-logado)::after { display:none; }
+@media (max-width: 760px) {
+  .layout-sistema { display: block; }
+  .menu-lateral { padding: 12px 16px; border-right: 0; border-bottom: 1px solid #303138; }
+  .menu-movel { display: block; width: 100%; border-color: #454750; background: #24262d; text-align: left; }
+  .menu-lateral details, .menu-lateral > a { display: none; }
+  .menu-lateral.menu-aberto details, .menu-lateral.menu-aberto > a { display: block; }
+  .menu-lateral.menu-aberto details:first-of-type { margin-top: 14px; }
+  .conteudo-sistema { padding: 0 16px; }
+  .caixa { padding: 22px; margin-top: 22px; margin-bottom: 22px; }
+  .linha { flex-wrap: wrap; gap: 0 16px; }
+  .linha label { min-width: 150px; }
+  .linha label.estreito { min-width: 90px; }
+  .dados-veiculo { grid-template-columns: 1fr; }
+  .dados-veiculo dt { padding-bottom: 0; border-bottom: 0; }
+  .dados-veiculo dd { padding-top: 4px; }
+  .abas { grid-template-columns: repeat(3, 1fr); }
+  th, td { padding: 11px 12px; }
+  h1 { font-size: 23px; }
+  h2 { font-size: 19px; }
+}
+@media (max-width: 600px) {
+  .topo { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 18px; }
+  .topo > span:last-child { max-width: 100%; overflow-wrap: anywhere; }
+  .nome-sistema { gap: 12px; font-size: 13px; letter-spacing: 0.8px; }
+  .logo-pequeno { flex-basis: 42px; width: 42px; height: 37px; }
+  .logo-grande { height: 185px; background-position: center 22px; background-size: auto 118px; }
+  .logo-grande + .caixa { padding: 26px 22px; }
+  label { margin-bottom: 18px; }
+  .perigo button { margin-top: 4px; }
+  .rodape-sistema { padding: 20px 0 26px; }
+}
+@media (max-width: 380px) {
+  .conteudo-sistema { padding: 0 12px; }
+  .caixa { padding: 18px; }
+  .linha { display: block; }
+  .perigo button { width: 100%; margin: 0 0 8px; }
+  .abas a { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  a, button, input, select, textarea { transition: none; }
+}
