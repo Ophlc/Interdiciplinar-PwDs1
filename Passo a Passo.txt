@@ -1,10 +1,65 @@
-PASSO A PASSO — REVISÃO SIMPLIFICADA DA 8.1
+1° Abrir o PowerShell como administrador e colocar o comando:
 
-Leia COMO_ATUALIZAR.txt para os passos completos.
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-Instalação nova: banco.sql deste pacote (apaga o banco anterior).
-Atualização: atualizar_v8_1_simplificada.sql (mantém os dados).
-Troque api.php e src. Mantenha o conexao.php da sua máquina.
-MySQL: 3306 em casa, 3307 na Etec. Apache e MySQL precisam estar ligados.
-No projeto Angular: ng serve -o. Abra http://localhost:4200.
-Não é necessário criar lojas ou vincular funcionários.
+Depois Pressione Enter e confirme a alteração digitando S (ou Sim / Y). 
+
+2° Crie uma pasta em Documentos, coloque algum nome, exemplo: Teste.
+
+3° Na pasta criada anteriormente, abra ela no VsCode.
+
+4° No terminal do VS Code, execute:
+
+npm install -g @angular/cli
+
+Aguarde a conclusão da instalação.
+
+5° Verificar a instalação
+
+ng version
+
+6° Coloque o comando para criar o projeto deve ser digitado no Terminal do VS Code:
+
+ng new primeiro-projeto
+
+7°  Resumo das opções selecionadas:
+
+Share pseudonymous usage data?
+→ No (N)
+
+Which stylesheet system would you like to use?
+→ CSS
+
+Enable SSR and SSG/Prerendering?
+→ No (N)
+
+8° Para abrir no navegador o projeto, coloque esse comando no Terminal do VsCode:
+
+ng serve -o
+
+9° Ligue o Apache no XAMPP
+
+10° Copie e cole a pasta api-revendedora lá no htdocs
+
+11° Abra a pasta api-revendedora no VsCode, analise o arquivo conexao.php. 
+Linha 3: Veja se a porta está de acordo com a porta da máquina em que vc está.
+Linha 6: Veja a senha se está de acordo com a mesma senha do MySql da máquina que cê tá.
+
+12°Execute o arquivo banco.sql, no MySql Workbench
+(ele apaga e cria o banco de novo, então todos os dados somem. Rode de novo sempre que o banco mudar)
+
+13° Copie e cole o src lá na pasta Teste que está em Documentos
+
+14° Teste tudo, cadastre-se, coloque os carros e modelos.
+
+15° Comandos no MySql:
+
+Para ver oque os usuários digitou:
+SELECT * FROM bd_revendedoracarros.tb_modelo;
+
+Para ver oque os usuários digitou mais bonitinho:
+SELECT u.login AS usuario, mo.nome AS modelo, ma.nome AS marca
+FROM bd_revendedoracarros.tb_modelo mo
+JOIN bd_revendedoracarros.tb_marca ma ON ma.id_marca = mo.id_marca
+JOIN bd_revendedoracarros.tb_usuario u ON u.login = mo.login
+ORDER BY u.login, mo.id_modelo;
